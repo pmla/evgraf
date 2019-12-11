@@ -2,7 +2,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from ase.build import bulk, mx2, nanotube
-from ase.geometry import permute_axes, find_mic
+from ase.geometry import find_mic
+from evgraf.geometry import permute_axes
 from evgraf import find_inversion_symmetry
 
 
