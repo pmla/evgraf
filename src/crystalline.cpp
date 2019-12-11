@@ -6,45 +6,6 @@
 #include <cstdio>
 
 
-static double calculate_dsquared(double (*a)[3], double (*b)[3]) {
-	double total = 0;
-	for (int i=0;i<3;i++) {
-		double d = a[0][i] - b[0][i];
-		total += d * d;
-	}
-
-	return total;
-}
-
-static int _crystalline_bipartite_matching(int num_atoms, int num_cells,
-                                          double (*P)[3], double (*Q)[3],
-                                          double* p_cost, int* permutation)
-{
-	std::vector< int64_t > _permutation(num_atoms, 0);
-	std::vector< double > distances(num_atoms * num_atoms, INFINITY);
-
-	for (int k=0;k<num_cells;k++) {
-		for (int i=0;i<num_atoms;i++) {
-			for (int j=0;j<num_atoms;j++) {
-				double dsq = calculate_dsquared(&P[i], &Q[k * num_atoms + j]);
-				distances[i * num_atoms + j] = std::min(dsq, distances[i * num_atoms + j]);
-			}
-		}
-	}
-
-	int res = solve_rectangular_linear_sum_assignment(num_atoms, num_atoms, distances.data(),
-								_permutation.data());
-
-	double cost = 0;
-	for (int i=0;i<num_atoms;i++) {
-		permutation[i] = _permutation[i];
-		cost += distances[i * num_atoms + permutation[i]];
-	}
-
-	*p_cost = cost;
-	return res;
-}
-
 static double _calculate_dsquared(double (*a)[3], double (*b)[3], double (*qoffset)[3]) {
 	double total = 0;
 	for (int i=0;i<3;i++) {
@@ -55,9 +16,9 @@ static double _calculate_dsquared(double (*a)[3], double (*b)[3], double (*qoffs
 	return total;
 }
 
-static int _znice(int num_atoms, int num_cells,
-			double (*P)[3], double (*Q)[3], double (*nbr_cells)[3],
-			double* p_cost, int64_t* permutation, double* distances)
+static int monoatomic_bipartite_matching(int num_atoms, int num_cells,
+					double (*P)[3], double (*Q)[3], double (*nbr_cells)[3],
+					double* p_cost, int64_t* permutation, double* distances)
 {
 
 	for (int i=0;i<num_atoms;i++) {
@@ -85,9 +46,9 @@ static int _znice(int num_atoms, int num_cells,
 	return res;
 }
 
-static int _nicetime(int num_atoms, int num_cells,
-                                          double (*P)[3], double (*Q)[3], double (*nbr_cells)[3], int* numbers,
-                                          double* p_cost, int* permutation)
+static int _crystalline_bipartite_matching(int num_atoms, int num_cells,
+						double (*P)[3], double (*Q)[3], double (*nbr_cells)[3],
+						int* numbers, double* p_cost, int* permutation)
 {
 	std::vector< int64_t > _permutation(num_atoms, 0);
 	std::vector< double > distances(num_atoms * num_atoms, INFINITY);
@@ -113,8 +74,8 @@ static int _nicetime(int num_atoms, int num_cells,
 		int offset = start[z];
 		int num = count[z];
 
-		res = _znice(num, num_cells, &P[offset], &Q[offset], nbr_cells,
-				&cost, &_permutation.data()[offset], distances.data());
+		res = monoatomic_bipartite_matching(num, num_cells, &P[offset], &Q[offset], nbr_cells,
+							&cost, &_permutation.data()[offset], distances.data());
 		if (res != 0) {
 			break;
 		}
@@ -138,19 +99,12 @@ extern "C" {
 #endif
 
 int crystalline_bipartite_matching(int num_atoms, int num_cells,
-                                   double* P, double* Q,
-                                   double* cost, int* permutation)
+        		           double* P, double* Q, double* nbr_cells, int* numbers,
+         		          double* cost, int* permutation)
 {
-	return _crystalline_bipartite_matching(num_atoms, num_cells, (double (*)[3])P, (double (*)[3])Q,
-						cost, permutation);
-}
-
-int nicetime(int num_atoms, int num_cells,
-                                   double* P, double* Q, double* nbr_cells, int* numbers,
-                                   double* cost, int* permutation)
-{
-	return _nicetime(num_atoms, num_cells, (double (*)[3])P, (double (*)[3])Q, (double (*)[3])nbr_cells, numbers,
-						cost, permutation);
+	return _crystalline_bipartite_matching(num_atoms, num_cells,
+						(double (*)[3])P, (double (*)[3])Q, (double (*)[3])nbr_cells,
+						numbers, cost, permutation);
 }
 
 #ifdef __cplusplus

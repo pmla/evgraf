@@ -7,42 +7,16 @@ from scipy.spatial.distance import cdist
 from .assignment import linear_sum_assignment
 from .subgroup_enumeration import (enumerate_subgroup_bases,
                                    get_subgroup_elements)
-from evgrafcpp import minimum_cost_matching
-from evgrafcpp import calculate_rmsd as _calculate_rmsd
+from evgrafcpp import calculate_rmsd
 
 
 def reduce_gcd(x):
     return functools.reduce(math.gcd, x)
 
 
-def concatenate_permutations(permutations: List[np.ndarray]) -> np.ndarray:
-    """Takes a list of permutations `[array([0, 1, 2]), array([0, 1])]` and
-    returns a consecutive permutation `array([0, 1, 2, 3, 4])`"""
-    concatenated = []
-    for p in permutations:
-        concatenated.extend(p + len(concatenated))
-    return np.array(concatenated)
-
-
 def get_neighboring_cells(pbc):
     pbc = pbc.astype(np.int)
     return np.array(list(itertools.product(*[range(-p, p + 1) for p in pbc])))
-
-
-def calculate_rmsd(positions, zindices, mapped_nbrs, num_cells):
-    """Calculates the RMSD between two crystal structures. The cost for each
-    element is calculated separately."""
-    nrmsdsq = 0
-    permutations = []
-    for indices, species_nbrs in zip(zindices, mapped_nbrs):
-        cost, permutation = minimum_cost_matching(positions[indices],
-                                                  num_cells, species_nbrs)
-        nrmsdsq += cost
-        permutations.append(permutation)
-
-    num_atoms = len(positions)
-    rmsd = np.sqrt(nrmsdsq / num_atoms)
-    return rmsd, concatenate_permutations(permutations)
 
 
 def standardize(atoms, subtract_barycenter=False):
@@ -92,11 +66,6 @@ class CrystalReducer:
 
         self.positions = positions = atoms.get_positions()
         self.nbr_cells = get_neighboring_cells(atoms.pbc)
-        self.zindices = [np.where(atoms.numbers == element)[0]
-                         for element in np.unique(atoms.numbers)]
-        self.nbr_pos = [np.concatenate([positions[indices] + e @ atoms.cell
-                                       for e in self.nbr_cells])
-                        for indices in self.zindices]
         self.offsets = self.nbr_cells @ atoms.cell
         if invert:
             self.n = len(atoms)
@@ -122,10 +91,7 @@ class CrystalReducer:
                 transformed[:, i] %= 1.0
         positions = self.atoms.cell.cartesian_positions(transformed)
 
-        _rmsd, _permutation = _calculate_rmsd(positions, self.positions, self.offsets, self.atoms.numbers.astype(np.int32))
-        rmsd, permutation = calculate_rmsd(positions, self.zindices,
-                                           self.nbr_pos, len(self.nbr_cells))
-        assert abs(rmsd - _rmsd) < 1E-12
+        rmsd, permutation = calculate_rmsd(positions, self.positions, self.offsets, self.atoms.numbers.astype(np.int32))
         if not self.invert:
             self.distances[key] = rmsd
             self.permutations[key] = permutation

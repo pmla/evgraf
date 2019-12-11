@@ -36,10 +36,6 @@ extern "C" {
 #endif
 
 int crystalline_bipartite_matching(int num_atoms, int num_cells,
-                                   double* P, double* Q,
-                                   double* cost, int* permutation);
-
-int nicetime(int num_atoms, int num_cells,
                                    double* P, double* Q, double* nbr_cells, int* numbers,
                                    double* cost, int* permutation);
 
