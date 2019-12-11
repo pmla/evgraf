@@ -11,13 +11,12 @@ static double calculate_dsquared(double (*a)[3], double (*b)[3], int num_cells, 
 	double best = INFINITY;
 	for (int j=0;j<num_cells;j++) {
 
-		double total = 0;
-		for (int i=0;i<3;i++) {
-			double d = a[0][i] - b[0][i] - nbr_cells[j][i];
-			total += d * d;
-		}
+		double dx = a[0][0] - b[0][0] - nbr_cells[j][0];
+		double dy = a[0][1] - b[0][1] - nbr_cells[j][1];
+		double dz = a[0][2] - b[0][2] - nbr_cells[j][2];
 
-		best = std::min(best, total);
+		double dsq = dx * dx + dy * dy + dz * dz;
+		best = std::min(best, dsq);
 	}
 
 	return best;
