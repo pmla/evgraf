@@ -2,9 +2,6 @@ import math
 import functools
 import itertools
 import numpy as np
-from typing import List
-from scipy.spatial.distance import cdist
-from .assignment import linear_sum_assignment
 from .subgroup_enumeration import (enumerate_subgroup_bases,
                                    get_subgroup_elements)
 from evgrafcpp import calculate_rmsd
@@ -64,7 +61,7 @@ class CrystalReducer:
         self.zpermutation = zpermutation
         self.scaled = atoms.get_scaled_positions()
 
-        self.positions = positions = atoms.get_positions()
+        self.positions = atoms.get_positions()
         self.nbr_cells = get_neighboring_cells(atoms.pbc)
         self.offsets = self.nbr_cells @ atoms.cell
         if invert:
@@ -91,7 +88,9 @@ class CrystalReducer:
                 transformed[:, i] %= 1.0
         positions = self.atoms.cell.cartesian_positions(transformed)
 
-        rmsd, permutation = calculate_rmsd(positions, self.positions, self.offsets, self.atoms.numbers.astype(np.int32))
+        rmsd, permutation = calculate_rmsd(positions, self.positions,
+                                           self.offsets,
+                                           self.atoms.numbers.astype(np.int32))
         if not self.invert:
             self.distances[key] = rmsd
             self.permutations[key] = permutation
