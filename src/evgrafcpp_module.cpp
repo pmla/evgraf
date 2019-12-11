@@ -76,10 +76,10 @@ static PyObject* calculate_rmsd(PyObject* self, PyObject* args, PyObject* kwargs
 
 	int num_atoms = PyArray_DIM(obj_pcont, 0);
 	int num_cells = PyArray_DIM(obj_nbrcellcont, 0);
-	double* P = (double*)PyArray_DATA((PyArrayObject*)obj_pcont);
-	double* Q = (double*)PyArray_DATA((PyArrayObject*)obj_qcont);
-	double* nbrcells = (double*)PyArray_DATA((PyArrayObject*)obj_nbrcellcont);
-	int* numbers = (int*)PyArray_DATA((PyArrayObject*)obj_numberscont);
+	double* P = (double*)PyArray_DATA((PyArrayObject*)obj_p);
+	double* Q = (double*)PyArray_DATA((PyArrayObject*)obj_q);
+	double* nbrcells = (double*)PyArray_DATA((PyArrayObject*)obj_nbrcell);
+	int* numbers = (int*)PyArray_DATA((PyArrayObject*)obj_numbers);
 
 	npy_intp dim[1] = {num_atoms};
 	PyObject* obj_permutation = PyArray_SimpleNew(1, dim, NPY_INT);
@@ -95,6 +95,7 @@ static PyObject* calculate_rmsd(PyObject* self, PyObject* args, PyObject* kwargs
 	Py_DECREF(obj_qcont);
 	Py_DECREF(obj_nbrcellcont);
 	Py_DECREF(obj_numberscont);
+	Py_DECREF(obj_permutation);
 	return result;
 }
 

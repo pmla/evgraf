@@ -6,14 +6,21 @@
 #include <cstdio>
 
 
-static double _calculate_dsquared(double (*a)[3], double (*b)[3], double (*qoffset)[3]) {
-	double total = 0;
-	for (int i=0;i<3;i++) {
-		double d = a[0][i] - b[0][i] - qoffset[0][i];
-		total += d * d;
+static double calculate_dsquared(double (*a)[3], double (*b)[3], int num_cells, double (*nbr_cells)[3]) {
+
+	double best = INFINITY;
+	for (int j=0;j<num_cells;j++) {
+
+		double total = 0;
+		for (int i=0;i<3;i++) {
+			double d = a[0][i] - b[0][i] - nbr_cells[j][i];
+			total += d * d;
+		}
+
+		best = std::min(best, total);
 	}
 
-	return total;
+	return best;
 }
 
 static int monoatomic_bipartite_matching(int num_atoms, int num_cells,
@@ -27,12 +34,11 @@ static int monoatomic_bipartite_matching(int num_atoms, int num_cells,
 		}
 	}
 
-	for (int k=0;k<num_cells;k++) {
-		for (int i=0;i<num_atoms;i++) {
-			for (int j=0;j<num_atoms;j++) {
-				double dsq = _calculate_dsquared(&P[i], &Q[j], &nbr_cells[k]);
-				distances[i * num_atoms + j] = std::min(dsq, distances[i * num_atoms + j]);
-			}
+
+	for (int i=0;i<num_atoms;i++) {
+		for (int j=0;j<num_atoms;j++) {
+			double dsq = calculate_dsquared(&P[i], &Q[j], num_cells, nbr_cells);
+			distances[i * num_atoms + j] = std::min(dsq, distances[i * num_atoms + j]);
 		}
 	}
 
