@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from ase.build import bulk, mx2, nanotube
-from evgraf.geometry import permute_axes
+from evgraf.permute_axes import permute_axes
 from evgraf import find_crystal_reductions
 
 

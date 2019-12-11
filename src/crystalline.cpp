@@ -104,8 +104,8 @@ extern "C" {
 #endif
 
 int crystalline_bipartite_matching(int num_atoms, int num_cells,
-        		           double* P, double* Q, double* nbr_cells, int* numbers,
-         		          double* cost, int* permutation)
+					double* P, double* Q, double* nbr_cells, int* numbers,
+					double* cost, int* permutation)
 {
 	return _crystalline_bipartite_matching(num_atoms, num_cells,
 						(double (*)[3])P, (double (*)[3])Q, (double (*)[3])nbr_cells,

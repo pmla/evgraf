@@ -1,11 +1,6 @@
 import itertools
 import numpy as np
-
-
-def pbc2pbc(pbc):
-    newpbc = np.empty(3, bool)
-    newpbc[:] = pbc
-    return newpbc
+from .pbc import pbc2pbc
 
 
 def reduction_gauss(B, hu, hv):

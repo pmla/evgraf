@@ -5,7 +5,7 @@ import numpy as np
 from .subgroup_enumeration import (enumerate_subgroup_bases,
                                    get_subgroup_elements)
 from evgrafcpp import calculate_rmsd
-from .minkowski_reduction import minkowski_reduce
+from .standardization import standardize
 
 
 def reduce_gcd(x):
@@ -15,23 +15,6 @@ def reduce_gcd(x):
 def get_neighboring_cells(pbc):
     pbc = pbc.astype(np.int)
     return np.array(list(itertools.product(*[range(-p, p + 1) for p in pbc])))
-
-
-def standardize(atoms, subtract_barycenter=False):
-    zpermutation = np.argsort(atoms.numbers, kind='merge')
-    atoms = atoms[zpermutation]
-    atoms.wrap(eps=0)
-
-    barycenter = np.mean(atoms.get_positions(), axis=0)
-    if subtract_barycenter:
-        atoms.positions -= barycenter
-
-    rcell, op = minkowski_reduce(atoms.cell, atoms.cell.any(1) & atoms.pbc)
-    invop = np.linalg.inv(op)
-    atoms.set_cell(rcell, scale_atoms=False)
-
-    atoms.wrap(eps=0)
-    return atoms, invop, barycenter, zpermutation
 
 
 def expand_coordinates(c, pbc):
