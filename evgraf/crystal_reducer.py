@@ -5,6 +5,7 @@ import numpy as np
 from .subgroup_enumeration import (enumerate_subgroup_bases,
                                    get_subgroup_elements)
 from evgrafcpp import calculate_rmsd
+from .minkowski_reduction import minkowski_reduce
 
 
 def reduce_gcd(x):
@@ -25,7 +26,7 @@ def standardize(atoms, subtract_barycenter=False):
     if subtract_barycenter:
         atoms.positions -= barycenter
 
-    rcell, op = atoms.cell.minkowski_reduce()
+    rcell, op = minkowski_reduce(atoms.cell, atoms.cell.any(1) & atoms.pbc)
     invop = np.linalg.inv(op)
     atoms.set_cell(rcell, scale_atoms=False)
 
