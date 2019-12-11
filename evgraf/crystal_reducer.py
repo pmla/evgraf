@@ -7,6 +7,7 @@ from scipy.spatial.distance import cdist
 from .assignment import linear_sum_assignment
 from .subgroup_enumeration import (enumerate_subgroup_bases,
                                    get_subgroup_elements)
+from evgrafcpp import bipartite_matching
 
 
 def reduce_gcd(x):
@@ -36,7 +37,7 @@ def minimum_cost_matching(positions, num_cells, nbr_positions):
     distances = cdist(positions, nbr_positions, 'sqeuclidean')
     distances = np.min(distances.reshape((n, num_cells, n)), axis=1)
     res = linear_sum_assignment(distances)
-    return res[1], np.sum(distances[res])
+    return np.sum(distances[res]), res[1]
 
 
 def calculate_rmsd(positions, zindices, mapped_nbrs, num_cells):
@@ -45,7 +46,7 @@ def calculate_rmsd(positions, zindices, mapped_nbrs, num_cells):
     nrmsdsq = 0
     permutations = []
     for indices, species_nbrs in zip(zindices, mapped_nbrs):
-        permutation, cost = minimum_cost_matching(positions[indices],
+        cost, permutation = minimum_cost_matching(positions[indices],
                                                   num_cells, species_nbrs)
         nrmsdsq += cost
         permutations.append(permutation)
