@@ -1,10 +1,11 @@
+import pytest
 import itertools
 import numpy as np
 from evgraf import subgroup_enumeration
 
 
-# Test subgroup elements
-for dim in [1, 2, 3]:
+@pytest.mark.parametrize("dim", [1, 2, 3])
+def test_subgroup_elements(dim):
     for dims in itertools.product(range(8), repeat=dim):
         dims = np.array(dims)
         bases = list(subgroup_enumeration.enumerate_subgroup_bases(dims))
