@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from evgraf.standardization import standardize
@@ -40,4 +39,3 @@ def test_standarization():
     p1 = reverted.get_positions()
     p0 = atoms.get_positions()
     assert_allclose(p0, p1, atol=TOL)
-

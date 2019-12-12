@@ -52,6 +52,7 @@ def test_mos2(i):
     result = find_inversion_symmetry(atoms)
     check_result(atoms, result)
 
+
 # 1-dimensional: carbon nanotube
 @pytest.mark.parametrize("i", range(3))
 def test_nanotube(i):
