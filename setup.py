@@ -27,5 +27,5 @@ setup(name='evgraf',
       ext_modules=[evgrafcpp_module],
       install_requires=['numpy',
                          'ase>=3.18.1'],
-      packages=['evgraf']
+      packages=find_packages()
       )

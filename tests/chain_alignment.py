@@ -40,9 +40,11 @@ def randomize(atoms, reflect=False, rotate=False, seed=None):
 def test_nanotube(i, reflect, seed):
     size = 2
     atoms = nanotube(3, 3, length=size)
+    randomized = randomize(atoms, reflect=reflect, rotate=True, seed=seed)
+
     permutation = np.roll(np.arange(3), i)
     atoms = permute_axes(atoms, permutation)
-    randomized = randomize(atoms, reflect=reflect, rotate=True, seed=seed)
+    randomized = permute_axes(randomized, permutation)
 
     rmsd = calculate_rmsd_chain(atoms, randomized, ignore_stoichiometry=False,
                                 allow_reflection=False, allow_rotation=True)
