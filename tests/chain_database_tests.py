@@ -14,7 +14,7 @@ from chain_alignment import randomize
 TOL = 1E-10
 
 # this test is not really for public consumption
-def test_chains_db():
+def chains_db():
 
     path = '/home/pete/Dropbox/structural_distance/chains.db'
     if not os.path.exists(path):
@@ -40,5 +40,7 @@ def test_chains_db():
                 print(res)
                 assert res < TOL
 
-warnings.simplefilter("error")
-test_chains_db()
+
+if __name__ == "__main__":
+    warnings.simplefilter("error")
+    chains_db()
