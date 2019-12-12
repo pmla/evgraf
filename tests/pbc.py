@@ -1,6 +1,5 @@
 import pytest
 import itertools
-import numpy as np
 from evgraf.pbc import pbc2pbc
 
 

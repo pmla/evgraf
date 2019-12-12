@@ -43,7 +43,7 @@ class CrystalReducer:
         self.atoms = atoms
         self.invop = invop
         self.zpermutation = zpermutation
-        self.scaled = atoms.get_scaled_positions()
+        self.scaled_positions = atoms.get_scaled_positions()
 
         self.positions = atoms.get_positions()
         self.nbr_cells = get_neighboring_cells(atoms.pbc)
@@ -66,7 +66,7 @@ class CrystalReducer:
         c = expand_coordinates(c, pbc)
 
         sign = [1, -1][self.invert]
-        transformed = sign * self.scaled + c / self.n
+        transformed = sign * self.scaled_positions + c / self.n
         for i, index in enumerate(c):
             if pbc[i]:
                 transformed[:, i] %= 1.0
@@ -86,9 +86,9 @@ class CrystalReducer:
         the subgroup basis."""
         n = self.n
         dims = [n] * sum(self.atoms.pbc)
-        num_atoms = len(self.scaled)
+        num_atoms = len(self.scaled_positions)
 
-        seen = -np.ones((3, num_atoms)).astype(np.int)
+        seen = -np.ones((3, num_atoms), dtype=int)
         elements = get_subgroup_elements(dims, H)
 
         for c1 in elements:

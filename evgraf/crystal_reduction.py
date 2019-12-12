@@ -44,10 +44,10 @@ def cluster_component(ps, permutations, shifts, i):
     return meanpos, component_rmsd
 
 
-def reduced_layout(cr, rmsd, group_index, H, permutations):
+def reduced_layout(reducer, rmsd, group_index, H, permutations):
 
-    num_atoms = len(cr.atoms)
-    numbers = cr.atoms.numbers
+    num_atoms = len(reducer.atoms)
+    numbers = reducer.atoms.numbers
     components = assign_atoms_to_clusters(num_atoms, numbers, permutations)
     if num_atoms // group_index != len(np.bincount(components)):
         return None
@@ -55,8 +55,8 @@ def reduced_layout(cr, rmsd, group_index, H, permutations):
     if len(np.unique(np.bincount(components))) > 1:
         return None
 
-    collected = collect_atoms(cr.n, H, cr.atoms.copy())
-    shifts = cr.nbr_cells @ collected.cell
+    collected = collect_atoms(reducer.n, H, reducer.atoms.copy())
+    shifts = reducer.nbr_cells @ collected.cell
 
     data = []
     for c in np.unique(components):
@@ -72,7 +72,7 @@ def reduced_layout(cr, rmsd, group_index, H, permutations):
 
     reduced = Atoms(positions=positions, numbers=numbers,
                     cell=collected.cell, pbc=collected.pbc)
-    reduced.set_cell(cr.invop @ reduced.cell, scale_atoms=False)
+    reduced.set_cell(reducer.invop @ reduced.cell, scale_atoms=False)
     reduced.wrap(eps=0)
     return reduced, components
 
@@ -116,14 +116,14 @@ def find_crystal_reductions(atoms):
             Describes how atoms in the input structure are combined in the
             reduced structure
     """
-    cr = CrystalReducer(atoms)
-    reductions = cr.find_consistent_reductions()
+    reducer = CrystalReducer(atoms)
+    reductions = reducer.find_consistent_reductions()
     Reduced = namedtuple('ReducedCrystal', 'rmsd factor atoms components')
-    invzperm = np.argsort(cr.zpermutation)
+    invzperm = np.argsort(reducer.zpermutation)
 
     reduced = {}
     for rmsd, group_index, H, permutations in reductions:
-        result = reduced_layout(cr, rmsd, group_index, H, permutations)
+        result = reduced_layout(reducer, rmsd, group_index, H, permutations)
         if result is not None:
             reduced_atoms, components = result
             key = group_index
