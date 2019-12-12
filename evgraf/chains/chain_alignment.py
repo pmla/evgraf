@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 from evgraf.standardization import standardize
 from .chain_standardization import standardize_chain
@@ -97,15 +98,21 @@ def calculate_rmsd_chain(atoms1, atoms2, ignore_stoichiometry=False,
     atoms1 = atoms1 * m1
     atoms2 = atoms2 * m2
 
-    res = _calculate_rmsd(atoms1, atoms2, ignore_stoichiometry,
-                          allow_rotation, num_chain_steps)
-    if not allow_reflection:
-        return res
+    signs = [1, 1]
+    if allow_reflection:
+        signs = itertools.product([-1, 1], repeat=2)
 
-    atoms1 = atoms1.copy()
-    scaled = -atoms1.get_scaled_positions(wrap=0)
-    atoms1.set_scaled_positions(scaled)
+    best = float("inf")
+    for rx, rz in signs:
+        reflected = atoms1.copy()
+        positions = reflected.get_positions()
+        positions[:, 0] *= rx
+        positions[:, 1] *= rx
+        positions[:, 2] *= rz
+        reflected.set_positions(positions)
+        reflected.wrap(eps=0)
 
-    fres = _calculate_rmsd(atoms1, atoms2, ignore_stoichiometry,
-                           allow_rotation, num_chain_steps)
-    return min(res, fres)
+        res = _calculate_rmsd(reflected, atoms2, ignore_stoichiometry,
+                              allow_rotation, num_chain_steps)
+        best = min(best, res)
+    return best

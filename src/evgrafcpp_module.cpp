@@ -5,6 +5,7 @@
 #include <cassert>
 #include <vector>
 #include "crystalline.h"
+#include "rectangular_lsap.h"
 
 
 #ifdef __cplusplus
@@ -99,12 +100,61 @@ static PyObject* calculate_rmsd(PyObject* self, PyObject* args, PyObject* kwargs
 	return result;
 }
 
+static PyObject* linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+	(void)self;
+	PyObject* obj_cost = NULL;
+	PyObject* obj_costcont = NULL;
+	if (!PyArg_ParseTuple(args, "O", &obj_cost))
+		return NULL;
+
+	// get numpy arrays in contiguous form
+	obj_costcont = PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 1, 2);
+	if (obj_costcont == NULL)
+		return error(PyExc_TypeError, "Invalid input data: cost");
+
+	// validate numpy arrays
+	if (PyArray_NDIM(obj_costcont) != 2)
+		return error(PyExc_TypeError, "cost matrix must be two-dimensional");
+
+	int m = PyArray_DIM(obj_costcont, 0);
+	int n = PyArray_DIM(obj_costcont, 1);
+	int p = std::min(m, n);
+	double* cost = (double*)PyArray_DATA((PyArrayObject*)obj_cost);
+
+	npy_intp dim[1] = {p};
+	PyObject* obj_permutation = PyArray_SimpleNew(1, dim, NPY_INT64);
+	int64_t* permutation = (int64_t*)PyArray_DATA((PyArrayObject*)obj_permutation);
+
+	PyObject* obj_range = PyArray_SimpleNew(1, dim, NPY_INT64);
+	int64_t* range = (int64_t*)PyArray_DATA((PyArrayObject*)obj_range);
+	for (int i=0;i<p;i++) {
+		range[i] = i;
+	}
+
+	int res = solve_rectangular_linear_sum_assignment(m, n, cost, permutation);
+	if (res != 0)
+		return error(PyExc_RuntimeError, "linear_sum_assignment failed");
+
+	PyObject* result = Py_BuildValue("OO", obj_range, obj_permutation);
+	Py_DECREF(obj_costcont);
+	Py_DECREF(obj_range);
+	Py_DECREF(obj_permutation);
+	return result;
+}
+
 static PyMethodDef evgrafcpp_methods[] = {
 	{
 		"calculate_rmsd",
 		(PyCFunction)calculate_rmsd,
 		METH_VARARGS,
 		"Calculates the RMSD between two crystal structures."
+	},
+	{
+		"linear_sum_assignment",
+		(PyCFunction)linear_sum_assignment,
+		METH_VARARGS,
+		"Solve the linear sum assignment problem."
 	},
 	{NULL}
 };

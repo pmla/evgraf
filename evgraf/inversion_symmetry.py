@@ -6,16 +6,16 @@ from ase.geometry import find_mic
 from .crystal_reducer import CrystalReducer, expand_coordinates
 
 
-def find_inversion_axis(cr):
-    n = cr.n
+def find_inversion_axis(reducer):
+    n = reducer.n
     r = list(range(n))
-    dim = sum(cr.atoms.pbc)
+    dim = sum(reducer.atoms.pbc)
     best = (float("inf"), None, None)
     for c in itertools.product(*([r] * dim)):
-        rmsd, permutation = cr.get_point(c)
+        rmsd, permutation = reducer.get_point(c)
         best = min(best, (rmsd, permutation, c), key=lambda x: x[0])
     rmsd, permutation, c = best
-    c = expand_coordinates(c, cr.atoms.pbc)
+    c = expand_coordinates(c, reducer.atoms.pbc)
     return rmsd, permutation, c
 
 
@@ -60,11 +60,11 @@ def find_inversion_symmetry(atoms):
     Inversion = namedtuple('InversionSymmetry', 'rmsd axis atoms permutation')
 
     n = len(atoms)
-    cr = CrystalReducer(atoms, invert=True)
-    rmsd, permutation, c = find_inversion_axis(cr)
+    reducer = CrystalReducer(atoms, invert=True)
+    rmsd, permutation, c = find_inversion_axis(reducer)
 
-    axis = (c / n) @ cr.atoms.cell / 2 + cr.barycenter
-    perm = cr.zpermutation[permutation][np.argsort(cr.zpermutation)]
+    axis = (c / n) @ reducer.atoms.cell / 2 + reducer.barycenter
+    perm = reducer.zpermutation[permutation][np.argsort(reducer.zpermutation)]
     inverted = atoms[perm]
     inverted.positions = -inverted.positions + 2 * axis
     inverted.wrap(eps=0)

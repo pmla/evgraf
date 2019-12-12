@@ -1,4 +1,5 @@
 import pytest
+import itertools
 import numpy as np
 from ase.build import nanotube
 from evgraf.permute_axes import permute_axes
@@ -8,7 +9,7 @@ from evgraf.chains.chain_alignment import calculate_rmsd_chain
 TOL = 1E-10
 
 
-def randomize(atoms, reflect=False, rotate=False, seed=None):
+def randomize(atoms, reflect=[1, 1], rotate=False, seed=None):
 
     # permute atoms randomly
     rng = np.random.RandomState(seed=seed)
@@ -19,8 +20,10 @@ def randomize(atoms, reflect=False, rotate=False, seed=None):
     positions = atoms.get_positions()
     positions += rng.uniform(0, 10, 3)
 
-    if reflect:
-        positions = -positions
+    rx, rz = reflect
+    positions[:, 0] *= rx
+    positions[:, 1] *= rx
+    positions[:, 2] *= rz
 
     if rotate:
         theta = rng.uniform(0, 2 * np.pi)
@@ -35,7 +38,7 @@ def randomize(atoms, reflect=False, rotate=False, seed=None):
 
 
 @pytest.mark.parametrize("seed", [0])
-@pytest.mark.parametrize("reflect", [False, True])
+@pytest.mark.parametrize("reflect", itertools.product([-1, 1], repeat=2))
 @pytest.mark.parametrize("i", range(3))
 def test_nanotube(i, reflect, seed):
     size = 2
@@ -47,6 +50,6 @@ def test_nanotube(i, reflect, seed):
     randomized = permute_axes(randomized, permutation)
 
     rmsd = calculate_rmsd_chain(atoms, randomized, ignore_stoichiometry=False,
-                                allow_reflection=False, allow_rotation=True)
+                                allow_reflection=True, allow_rotation=True)
 
     assert rmsd < TOL

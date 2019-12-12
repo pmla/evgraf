@@ -1,7 +1,7 @@
 import numpy as np
 import heapq
 from scipy.spatial.distance import cdist
-from scipy.optimize import linear_sum_assignment
+from evgrafcpp import linear_sum_assignment
 
 
 def minimum_angle(a, b):
