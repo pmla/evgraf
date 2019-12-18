@@ -2,7 +2,7 @@ import pytest
 import itertools
 import numpy as np
 from ase.build import nanotube
-from evgraf.permute_axes import permute_axes
+from evgraf.utils import permute_axes
 from evgraf.chains.chain_alignment import calculate_rmsd_chain
 
 

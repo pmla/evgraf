@@ -225,7 +225,10 @@ def _register(P, Q, eindices, cell_length):
     return best
 
 
-def register_chain(P, Q, eindices, cell_length, best=None):
+def register_chain(P, Q, numbers, cell_length, best=None):
+
+    eindices = [np.where(numbers == element)[0]
+                for element in np.unique(numbers)]
 
     n = len(P)
     if best is None or 1:

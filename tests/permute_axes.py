@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from ase import Atoms
-from evgraf.permute_axes import permute_axes
+from evgraf.utils import permute_axes
 
 
 TOL = 1E-10

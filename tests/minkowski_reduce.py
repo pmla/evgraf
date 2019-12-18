@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from evgraf.minkowski_reduction import minkowski_reduce
+from evgraf.utils import minkowski_reduce
 from ase.cell import Cell
 
 

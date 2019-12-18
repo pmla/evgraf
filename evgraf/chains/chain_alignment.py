@@ -1,8 +1,9 @@
 import itertools
 import numpy as np
-from evgraf.standardization import standardize
+from evgraf.utils import standardize
 from .chain_standardization import standardize_chain
 from .chain_registration import register_chain
+from .chain_registration2d import register_clever
 
 
 def get_multipliers(n1, n2):
@@ -35,9 +36,6 @@ def _calculate_rmsd(atoms1, atoms2, ignore_stoichiometry, allow_rotation,
     pos1 = atoms1.get_positions(wrap=0)
     pos2 = atoms2.get_positions(wrap=0)
 
-    eindices = [np.where(atoms1.numbers == element)[0]
-                for element in np.unique(atoms1.numbers)]
-
     best = (float("inf"), None, None, None)
     for i in range(num_chain_steps):
 
@@ -46,7 +44,9 @@ def _calculate_rmsd(atoms1, atoms2, ignore_stoichiometry, allow_rotation,
 
         b = (best[0], np.arange(num_atoms), np.eye(2))
         rmsd, perm, u = register_chain(translated_positions, pos2,
-                                       eindices, l, b)
+                                       atoms1.numbers, l, b)
+        _perm = register_clever(translated_positions, pos2,
+                                       atoms1.numbers, l)
         U = np.eye(3)
         U[:2, :2] = u
 

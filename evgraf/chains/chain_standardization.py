@@ -1,6 +1,5 @@
 import numpy as np
-from evgraf.pbc import pbc2pbc
-from evgraf.permute_axes import permute_axes
+from evgraf.utils import pbc2pbc, permute_axes
 
 
 def standardize_chain(atoms):

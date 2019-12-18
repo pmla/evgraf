@@ -5,7 +5,7 @@ import numpy as np
 from .subgroup_enumeration import (enumerate_subgroup_bases,
                                    get_subgroup_elements)
 from evgrafcpp import calculate_rmsd
-from .standardization import standardize
+from evgraf.utils import standardize
 
 
 def reduce_gcd(x):
@@ -54,6 +54,10 @@ class CrystalReducer:
         else:
             self.n = reduce_gcd(atoms.symbols.formula.count().values())
 
+    def calculate_rmsd(self, positions):
+        return calculate_rmsd(positions, self.positions, self.offsets,
+                              self.atoms.numbers.astype(np.int32))
+
     def get_point(self, c):
         """Calculates the minimum-cost permutation at a desired translation.
         The translation is specified by `c` which describes the coordinates of
@@ -72,9 +76,7 @@ class CrystalReducer:
                 transformed[:, i] %= 1.0
         positions = self.atoms.cell.cartesian_positions(transformed)
 
-        rmsd, permutation = calculate_rmsd(positions, self.positions,
-                                           self.offsets,
-                                           self.atoms.numbers.astype(np.int32))
+        rmsd, permutation = self.calculate_rmsd(positions)
         if not self.invert:
             self.distances[key] = rmsd
             self.permutations[key] = permutation

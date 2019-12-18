@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_allclose
-from evgraf.standardization import standardize
+from evgraf.utils import standardize
 from ase.build import bulk
 
 

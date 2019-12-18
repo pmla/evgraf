@@ -1,6 +1,6 @@
 import pytest
 import itertools
-from evgraf.pbc import pbc2pbc
+from evgraf.utils import pbc2pbc
 
 
 def test_true():

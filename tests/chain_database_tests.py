@@ -6,7 +6,7 @@ import numpy as np
 from ase.build import nanotube
 from ase.geometry.dimensionality import isolate_components
 from ase.db import connect
-from evgraf.permute_axes import permute_axes
+from evgraf.utils import permute_axes
 from evgraf.chains.chain_alignment import calculate_rmsd_chain
 from chain_alignment import randomize
 
