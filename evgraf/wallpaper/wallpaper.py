@@ -1,18 +1,25 @@
 import itertools
 import numpy as np
+from evgraf import find_crystal_reductions
 from evgraf.utils import minkowski_reduce, standardize, plot_atoms
 from evgraf.crystal_reducer import CrystalReducer, expand_coordinates
 from .lattice_symmetrization import symmetrize_bravais
 from .layer_standardization import standardize_layer
 
 
-def cherry_pick(reducer, c, offset, denom=2):
+def flip_positions(positions, axis):
+    axis = axis / np.linalg.norm(axis)
+    normal = np.array([-axis[1], axis[0], 0])
+    k = - 2 * np.dot(positions, normal)
+    return positions + np.outer(k, normal)
+
+
+def cherry_pick(reducer, c, offset, denom, invcell):
 
     num_atoms = len(reducer.atoms)
     offset = expand_coordinates(offset, reducer.atoms.pbc)
     shift = offset / (denom * num_atoms)
     transformed = reducer.scaled_positions - shift
-    #print(shift, transformed)
 
     if c[3] == 1:
         transformed[:, 0] += 0.5
@@ -22,50 +29,35 @@ def cherry_pick(reducer, c, offset, denom=2):
         transformed[:, 1] += 0.5
         transformed[:, 0] *= -1
 
+    positions = transformed @ reducer.atoms.cell
+
+    if c[1] == 1:
+        positions = flip_positions(positions, reducer.atoms.cell[1])
+
+    if c[2] == 1:
+        positions = flip_positions(positions, reducer.atoms.cell[0])
+
+    if c[5] == 1:
+        cell = reducer.invop @ reducer.atoms.cell
+        positions = flip_positions(positions, cell[0] + cell[1])
+
+    if c[6] == 1:
+        cell = reducer.invop @ reducer.atoms.cell
+        positions = flip_positions(positions, cell[1] - cell[0])
+
     if c[7] == 1:
-        transformed[:, 0] *= -1
-        transformed[:, 1] *= -1
+        positions += reducer.atoms.cell[0] / 2
+        positions = flip_positions(positions, reducer.atoms.cell[0] + reducer.atoms.cell[1])
+        positions -= reducer.atoms.cell[0] / 2
 
     theta = c[0]
     U = np.array([[np.cos(theta), -np.sin(theta), 0],
                   [np.sin(theta), +np.cos(theta), 0],
                   [0, 0, 1]])
-    positions = transformed @ reducer.atoms.cell @ U.T
+    positions = positions @ U.T
 
-    if c[1] == 1:
-        #positions[:, 0] *= -1
-        line = reducer.atoms.cell[1]
-        line = line / np.linalg.norm(line)
-        a = np.array([-line[1], line[0], 0])
-        k = - 2 * np.dot(positions, a)
-        positions = positions + [e * a for e in k]
-
-    if c[2] == 1:
-        #positions[:, 1] *= -1
-        line = reducer.atoms.cell[0]
-        line = line / np.linalg.norm(line)
-        a = np.array([-line[1], line[0], 0])
-        k = - 2 * np.dot(positions, a)
-        positions = positions + [e * a for e in k]
-
-    if c[5] == 1:
-        cell = reducer.invop @ reducer.atoms.cell
-        line = cell[0] + cell[1]
-        line /= np.linalg.norm(line)
-        a = np.array([-line[1], line[0], 0])
-        k = - 2 * np.dot(positions, a)
-        positions = positions + [e * a for e in k]
-
-    if c[6] == 1:
-        cell = reducer.invop @ reducer.atoms.cell
-        line = cell[1] - cell[0]
-        line /= np.linalg.norm(line)
-
-        a = np.array([-line[1], line[0], 0])
-        k = - 2 * np.dot(positions - cell[0], a)
-        positions = positions + [e * a for e in k]
-
-    transformed = np.linalg.solve(reducer.atoms.cell.T, positions.T).T
+    #transformed = np.linalg.solve(reducer.atoms.cell.T, positions.T).T
+    transformed = positions @ invcell
     transformed += shift
     transformed[:, 0] %= 1.0
     transformed[:, 1] %= 1.0
@@ -80,10 +72,6 @@ def straightforward(sym_atoms, k=1, nr=1, nf1=1, nf2=1, ng1=1, ng2=1, ndf1=1, nd
 
     n = len(sym_atoms)
     reducer = CrystalReducer(sym_atoms, invert=True)
-    #print(reducer.barycenter)
-    #print(n)
-    #asdf
-
     ops = [range(nr), range(nf1), range(nf2), range(ng1), range(ng2),
            range(ndf1), range(ndf2), range(ncdf)]
 
@@ -91,6 +79,8 @@ def straightforward(sym_atoms, k=1, nr=1, nf1=1, nf2=1, ng1=1, ng2=1, ndf1=1, nd
     denom = 2
     if k >= 3:
         denom = k
+
+    invcell = np.linalg.inv(reducer.atoms.cell)
 
     best = float("inf")
     for i, j in itertools.product(range(k * n), range(k * n)):
@@ -101,7 +91,7 @@ def straightforward(sym_atoms, k=1, nr=1, nf1=1, nf2=1, ng1=1, ng2=1, ndf1=1, nd
 
             r, f1, f2, g1, g2, df1, df2, cdf = op
             theta = 2 * np.pi * r / nr
-            rmsd, perm = cherry_pick(reducer, [theta, f1, f2, g1, g2, df1, df2, cdf], (i, j), denom)
+            rmsd, perm = cherry_pick(reducer, [theta, f1, f2, g1, g2, df1, df2, cdf], (i, j), denom, invcell)
             nrmsdsq = n * rmsd**2
             #print(best, i, j, op, rmsd)
             acc += nrmsdsq
@@ -208,3 +198,20 @@ def get_wallpaper_distance(name, atoms):
         return dsym + straightforward(sym_atoms, nr=6, nf1=2, k=3)
     else:
         raise ValueError("Not a valid wallpaper group.")
+
+
+def get_distances(atoms):
+
+    names = ['p1', 'p2', 'pg', 'pm', 'cm', 'pgg', 'pmg', 'pmm', 'cmm',
+             'p4', 'p4g', 'p4m', 'p3', 'p3m1', 'p31m', 'p6', 'p6m']
+
+    results = []
+    reductions = find_crystal_reductions(atoms)
+    for reduced in reductions:
+        #reduced.rmsd
+        #print(reduced.factor, reduced.rmsd)
+        for name in names:
+            dsym = get_wallpaper_distance(name, reduced.atoms)
+            results.append((reduced.factor, name, dsym + reduced.rmsd))
+    for factor, name, d in results:
+        print(factor, name.rjust(4), d)

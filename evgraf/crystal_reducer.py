@@ -34,6 +34,7 @@ def expand_coordinates(c, pbc):
 
 class CrystalReducer:
 
+    # TODO: remove explicit `invert` parameter. use barycenter instead.
     def __init__(self, atoms, invert=False):
         self.invert = invert
         self.distances = {}
@@ -58,6 +59,7 @@ class CrystalReducer:
         return calculate_rmsd(positions, self.positions, self.offsets,
                               self.atoms.numbers.astype(np.int32))
 
+    # TODO: split inversion features into separate module. remove explicit `invert` parameter.
     def get_point(self, c):
         """Calculates the minimum-cost permutation at a desired translation.
         The translation is specified by `c` which describes the coordinates of
@@ -109,7 +111,7 @@ class CrystalReducer:
         n = self.n
         dims = [n] * sum(self.atoms.pbc)
         for H in enumerate_subgroup_bases(dims, self.is_consistent,
-                                          min_index=2, max_index=n):
+                                          min_index=1, max_index=n):
             group_index = np.prod(dims // np.diag(H))
             elements = get_subgroup_elements(dims, H)
             distances = np.array([self.distances[tuple(c)] for c in elements])

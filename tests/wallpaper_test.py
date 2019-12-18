@@ -44,7 +44,7 @@ def build_atoms(rng, scaled_positions, cell=None):
     c = np.eye(3)
     if cell is not None:
         c[:2, :2] = cell
-    #c[:2, :2] = rotate(c[:2, :2], rng.uniform(0, 2 * np.pi))
+    c[:2, :2] = rotate(c[:2, :2], rng.uniform(0, 2 * np.pi))
 
     scaled_positions[:, 0] += rng.uniform(0, 1, n)
     scaled_positions[:, 1] += rng.uniform(0, 1, n)
@@ -296,10 +296,12 @@ def build_cmm(seed=0):
     return build_atoms(rng, scaled_positions, cell)
 
 
+names = ['p1', 'p2', 'pg', 'pm', 'cm', 'pgg', 'pmg', 'pmm', 'cmm',
+         'p4', 'p4g', 'p4m', 'p3', 'p3m1', 'p31m', 'p6', 'p6m']
+
 # TODO: add tests for vertical/horizontal for (pm, pg, pmg)
 @pytest.mark.parametrize("seed", range(3))
-@pytest.mark.parametrize("name", ['p1', 'p2', 'pm', 'pg', 'pmm', 'pmg', 'pgg', 'cm', 'cmm',
-                                  'p4', 'p4m', 'p4g', 'p3', 'p3m1', 'p31m', 'p6', 'p6m'][:])
+@pytest.mark.parametrize("name", names)
 def test_implemented(name, seed):
     fbuild = globals()['build_{0}'.format(name)]
     atoms = fbuild(seed)
@@ -320,5 +322,11 @@ def test_implemented(name, seed):
     assert d < TOL
 
 
+def test_distances():
+    atoms = build_p4g(0)
+    from evgraf.wallpaper.wallpaper import get_distances
+    get_distances(atoms)
+
 if __name__ == "__main__":
-    test_implemented('p6m', 0)
+    #test_implemented('p4', 0)
+    test_distances()

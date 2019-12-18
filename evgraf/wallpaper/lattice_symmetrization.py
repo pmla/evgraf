@@ -31,11 +31,11 @@ def symmetrize_lattice(name, cell):
 
 def symmetrize_bravais(name, atoms):
     dsym, sym, Q, L = symmetrize_lattice(name, atoms.cell)
-    print(name)
-    print(dsym)
-    print(atoms.cell)
-    print(sym)
-    print(L)
+    #print(name)
+    #print(dsym)
+    #print(atoms.cell)
+    #print(sym)
+    #print(L)
 
     sym_atoms = atoms.copy()
     sym_atoms.set_cell(sym, scale_atoms=True)
