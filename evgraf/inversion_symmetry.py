@@ -3,19 +3,35 @@ import numpy as np
 from collections import namedtuple
 from ase import Atoms
 from ase.geometry import find_mic
-from .crystal_reducer import CrystalReducer, expand_coordinates
+from .crystal_comparator import CrystalComparator
 
 
-def find_inversion_axis(reducer):
-    n = reducer.n
+class CrystalInverter:
+
+    def __init__(self, atoms):
+        self.n = len(atoms)
+        self.comparator = CrystalComparator(atoms, subtract_barycenter=True)
+
+    def get_point(self, c):
+        """Calculates the minimum-cost permutation at a desired translation.
+        The translation is specified by `c` which describes the coordinates of
+        the subgroup element."""
+        c = self.comparator.expand_coordinates(c)
+        positions = -self.comparator.positions + c @ self.comparator.atoms.cell / self.n
+        return self.comparator.calculate_rmsd(positions)
+
+
+# TODO: investigate whether inversion symmetry axis should lie at half-integer lattice sites
+def find_inversion_axis(inverter):
+    n = inverter.n
     r = list(range(n))
-    dim = sum(reducer.atoms.pbc)
+    dim = inverter.comparator.dim
     best = (float("inf"), None, None)
     for c in itertools.product(*([r] * dim)):
-        rmsd, permutation = reducer.get_point(c)
+        rmsd, permutation = inverter.get_point(c)
         best = min(best, (rmsd, permutation, c), key=lambda x: x[0])
     rmsd, permutation, c = best
-    c = expand_coordinates(c, reducer.atoms.pbc)
+    c = inverter.comparator.expand_coordinates(c)
     return rmsd, permutation, c
 
 
@@ -60,11 +76,11 @@ def find_inversion_symmetry(atoms):
     Inversion = namedtuple('InversionSymmetry', 'rmsd axis atoms permutation')
 
     n = len(atoms)
-    reducer = CrystalReducer(atoms, invert=True)
-    rmsd, permutation, c = find_inversion_axis(reducer)
+    inverter = CrystalInverter(atoms)
+    rmsd, permutation, c = find_inversion_axis(inverter)
 
-    axis = (c / n) @ reducer.atoms.cell / 2 + reducer.barycenter
-    perm = reducer.zpermutation[permutation][np.argsort(reducer.zpermutation)]
+    axis = (c / n) @ inverter.comparator.atoms.cell / 2 + inverter.comparator.barycenter
+    perm = inverter.comparator.zpermutation[permutation][np.argsort(inverter.comparator.zpermutation)]
     inverted = atoms[perm]
     inverted.positions = -inverted.positions + 2 * axis
     inverted.wrap(eps=0)

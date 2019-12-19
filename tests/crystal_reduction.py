@@ -21,10 +21,10 @@ def test_nacl():
     size = 3
     atoms = bulk("NaCl", "rocksalt", a=5.64) * size
     result = find_crystal_reductions(atoms)
-    assert len(result) == size
+    assert len(result) == size + 1
     assert all([reduced.rmsd < TOL for reduced in result])
     factors = [reduced.factor for reduced in result]
-    assert tuple(factors) == (3, 9, 27)
+    assert tuple(factors) == (1, 3, 9, 27)
     check_components(atoms, result)
 
 
@@ -37,10 +37,10 @@ def test_mos2(i):
     atoms = permute_axes(atoms, permutation)
 
     result = find_crystal_reductions(atoms)
-    assert len(result) == size
+    assert len(result) == size + 1
     assert all([reduced.rmsd < TOL for reduced in result])
     factors = [reduced.factor for reduced in result]
-    assert tuple(factors) == (2, 4, 8, 16)
+    assert tuple(factors) == (1, 2, 4, 8, 16)
     check_components(atoms, result)
 
 
@@ -53,7 +53,7 @@ def test_nanotube(i):
     atoms = permute_axes(atoms, permutation)
 
     result = find_crystal_reductions(atoms)
-    factors = [reduced.factor for reduced in result[:2]]
-    assert tuple(factors) == (2, 4)
-    assert all([reduced.rmsd < TOL for reduced in result[:2]])
+    factors = [reduced.factor for reduced in result[:3]]
+    assert tuple(factors) == (1, 2, 4)
+    assert all([reduced.rmsd < TOL for reduced in result[:3]])
     check_components(atoms, result)

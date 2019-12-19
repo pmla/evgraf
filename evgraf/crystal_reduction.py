@@ -46,8 +46,8 @@ def cluster_component(ps, permutations, shifts, i):
 
 def reduced_layout(reducer, rmsd, group_index, H, permutations):
 
-    num_atoms = len(reducer.atoms)
-    numbers = reducer.atoms.numbers
+    num_atoms = len(reducer.comparator.atoms)
+    numbers = reducer.comparator.atoms.numbers
     components = assign_atoms_to_clusters(num_atoms, numbers, permutations)
     if num_atoms // group_index != len(np.bincount(components)):
         return None
@@ -55,8 +55,8 @@ def reduced_layout(reducer, rmsd, group_index, H, permutations):
     if len(np.unique(np.bincount(components))) > 1:
         return None
 
-    collected = collect_atoms(reducer.n, H, reducer.atoms.copy())
-    shifts = reducer.nbr_cells @ collected.cell
+    collected = collect_atoms(reducer.n, H, reducer.comparator.atoms.copy())
+    shifts = reducer.comparator.nbr_cells @ collected.cell
 
     data = []
     for c in np.unique(components):
@@ -72,7 +72,7 @@ def reduced_layout(reducer, rmsd, group_index, H, permutations):
 
     reduced = Atoms(positions=positions, numbers=numbers,
                     cell=collected.cell, pbc=collected.pbc)
-    reduced.set_cell(reducer.invop @ reduced.cell, scale_atoms=False)
+    reduced.set_cell(reducer.comparator.invop @ reduced.cell, scale_atoms=False)
     reduced.wrap(eps=0)
     return reduced, components
 
@@ -119,7 +119,7 @@ def find_crystal_reductions(atoms):
     reducer = CrystalReducer(atoms)
     reductions = reducer.find_consistent_reductions()
     Reduced = namedtuple('ReducedCrystal', 'rmsd factor atoms components')
-    invzperm = np.argsort(reducer.zpermutation)
+    invzperm = np.argsort(reducer.comparator.zpermutation)
 
     reduced = {}
     for rmsd, group_index, H, permutations in reductions:
