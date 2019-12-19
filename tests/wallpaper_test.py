@@ -328,5 +328,5 @@ def test_distances():
     get_distances(atoms)
 
 if __name__ == "__main__":
-    #test_implemented('p4g', 0)
-    test_distances()
+    test_implemented('p4m', 0)
+    #test_distances()
