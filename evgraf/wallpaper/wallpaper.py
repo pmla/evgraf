@@ -35,6 +35,59 @@ class WallpaperGroup:
             self.k = 1
 
 
+def rotation_matrix(theta):
+    return np.array([[np.cos(theta), -np.sin(theta), 0],
+                     [np.sin(theta), +np.cos(theta), 0],
+                     [0, 0, 1]])
+
+
+def rotation_matrices(n):
+    thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    return [rotation_matrix(theta) for theta in thetas]
+
+
+def flip_x(matrices):
+    matrices = matrices.copy()
+    for e in matrices:
+        e[0] *= -1
+    return matrices
+
+
+def flip_y(matrices):
+    matrices = matrices.copy()
+    for e in matrices:
+        e[1] *= -1
+    return matrices
+
+
+def reverse(matrices):
+    return [e @ [[0, -1, 0], [-1, 0, 0], [0, 0, 1]] for e in matrices]
+
+
+affine = {'p1':   [],
+          'p2':   [rotation_matrices(2)],
+          'pg':   [[(np.diag([-1, 1, 1.]), [0, 0.5, 0])], [(np.diag([1, -1, 1.]), [0.5, 0, 0])]],
+          'pm':   [[np.diag([-1, 1, 1.])], [np.diag([1, -1, 1.])]],
+          'cm':   [[np.diag([-1, 1, 1.])], [np.diag([1, -1, 1.])]],
+          'pgg':  [[(np.diag([+1, +1, 0]), [  0,   0, 0]),
+                    (np.diag([+1, -1, 0]), [0.5,   0, 0]),
+                    (np.diag([-1, +1, 0]), [  0, 0.5, 0]),
+                    (np.diag([-1, -1, 0]), [0.5, 0.5, 0])]],
+          'pmg':  [rotation_matrices(2) + [(e, [0, 0.5, 0]) for e in flip_y(rotation_matrices(2))],
+                   rotation_matrices(2) + [(e, [0.5, 0, 0]) for e in flip_x(rotation_matrices(2))]],
+          'pmm':  [[np.diag([-1, 1, 1.]), np.diag([1, -1, 1.])]],
+          'cmm':  [[np.diag([-1, 1, 1.]), np.diag([1, -1, 1.])]],
+          'p4':   [rotation_matrices(4)],
+          'p4g':  [rotation_matrices(4) + [(e, [0.5, 0.5, 0]) for e in reverse(rotation_matrices(4))]],
+          'p4m':  [rotation_matrices(4) + flip_y(rotation_matrices(4))],
+          'p3':   [rotation_matrices(3)],
+          'p3m1': [rotation_matrices(3) + flip_x(rotation_matrices(3))],
+          'p31m': [rotation_matrices(3) + flip_y(rotation_matrices(3))],
+          'p6':   [rotation_matrices(6)],
+          'p6m':  [rotation_matrices(6) + flip_y(rotation_matrices(6))],
+         }
+
+
 groups = {'p1':   WallpaperGroup('oblique'),
           'p2':   WallpaperGroup('oblique',             [Symmetries(r=2)]),
           'pg':   WallpaperGroup('rectangular',         [Symmetries(g1=True),
@@ -128,32 +181,59 @@ def get_wallpaper_distance(name, atoms):
         denom = k
 
     scaled_positions = comparator.atoms.cell.scaled_positions(comparator.positions)
+    cell = comparator.invop @ comparator.atoms.cell
 
-    best = float("inf")
-    for symmetries in group.symmetries:
-        ops = symmetries.generate_ops()
-        for i, j in itertools.product(range(k * n), range(k * n)):
-            offset = comparator.expand_coordinates((i, j))
-            shift = offset / (denom * n)
-            positions = (scaled_positions - shift) @ comparator.atoms.cell
+    if name in affine:
+        best = float("inf")
+        for symmetries in affine[name]:
+            for i, j in itertools.product(range(k * n), range(k * n)):
+                offset = comparator.expand_coordinates((i, j))
+                shift = offset / (denom * n)
 
-            acc = 0
-            for op in ops:
-                r, f1, f2, g1, g2, df1, df2, cdf = op
-                theta = 2 * np.pi * r / symmetries.nr
-                rmsd, perm = cherry_pick(comparator, positions.copy(),
-                                         [theta, f1, f2, g1, g2, df1, df2, cdf], shift)
-                nrmsdsq = n * rmsd**2
-                #print(best, i, j, op, rmsd)
-                acc += nrmsdsq
-            scores[i, j] = acc
-            best = min(best, acc)
+                positions0 = (scaled_positions - shift) @ comparator.atoms.cell
 
-        if 0:
-            import matplotlib.pyplot as plt
-            plt.imshow(scores, interpolation='none')
-            plt.colorbar()
-            plt.show()
+                acc = 0
+                for matrix in symmetries:
+                    if isinstance(matrix, tuple):
+                        matrix, trans = matrix
+                    else:
+                        trans = np.zeros(3)
+
+                    positions = positions0 @ matrix.T + trans @ cell
+                    positions += shift @ comparator.atoms.cell
+                    rmsd, perm = comparator.calculate_rmsd(positions)
+                    nrmsdsq = n * rmsd**2
+                    #print(best, i, j, op, rmsd)
+                    #plot_atoms(comparator.atoms, positions)
+                    acc += nrmsdsq
+                scores[i, j] = acc
+                best = min(best, acc)
+    else:
+        best = float("inf")
+        for symmetries in group.symmetries:
+            ops = symmetries.generate_ops()
+            for i, j in itertools.product(range(k * n), range(k * n)):
+                offset = comparator.expand_coordinates((i, j))
+                shift = offset / (denom * n)
+                positions = (scaled_positions - shift) @ comparator.atoms.cell
+
+                acc = 0
+                for op in ops:
+                    r, f1, f2, g1, g2, df1, df2, cdf = op
+                    theta = 2 * np.pi * r / symmetries.nr
+                    rmsd, perm = cherry_pick(comparator, positions.copy(),
+                                             [theta, f1, f2, g1, g2, df1, df2, cdf], shift)
+                    nrmsdsq = n * rmsd**2
+                    #print(best, i, j, op, rmsd)
+                    acc += nrmsdsq
+                scores[i, j] = acc
+                best = min(best, acc)
+
+            if 0:
+                import matplotlib.pyplot as plt
+                plt.imshow(scores, interpolation='none')
+                plt.colorbar()
+                plt.show()
         
     return dsym + best
 

@@ -40,5 +40,6 @@ def symmetrize_bravais(name, atoms):
     sym_atoms = atoms.copy()
     sym_atoms.set_cell(sym, scale_atoms=True)
     sym_atoms.set_cell((sym_atoms.cell.T @ L).T, scale_atoms=False)
+    sym_atoms.set_cell(sym_atoms.cell @ Q.T, scale_atoms=True)
     sym_atoms.wrap(eps=0)
     return dsym, sym_atoms

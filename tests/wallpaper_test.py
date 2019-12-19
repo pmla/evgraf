@@ -323,10 +323,10 @@ def test_implemented(name, seed):
 
 
 def test_distances():
-    atoms = build_p4m(0)
+    atoms = build_p4g(0)
     from evgraf.wallpaper.wallpaper import get_distances
     get_distances(atoms)
 
 if __name__ == "__main__":
-    #test_implemented('p6', 0)
+    #test_implemented('p4g', 0)
     test_distances()
