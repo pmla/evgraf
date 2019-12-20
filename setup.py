@@ -26,6 +26,7 @@ setup(name='evgraf',
       url='https://github.com/pmla/evgraf',
       ext_modules=[evgrafcpp_module],
       install_requires=['numpy',
-                         'ase>=3.18.1'],
+                        'scipy',
+                        'ase>=3.18.1'],
       packages=find_packages()
       )
