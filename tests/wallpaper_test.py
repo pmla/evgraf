@@ -322,10 +322,10 @@ def test_implemented(name, seed):
     assert d < TOL
 
 
-def test_distances():
-    atoms = build_p4g(0)
-    from evgraf.wallpaper.wallpaper import get_distances
-    get_distances(atoms)
+#def test_distances():
+#    atoms = build_p4g(0)
+#    from evgraf.wallpaper.wallpaper import get_distances
+#    get_distances(atoms)
 
 if __name__ == "__main__":
     test_implemented('p4g', 0)

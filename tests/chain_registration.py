@@ -3,19 +3,11 @@ import itertools
 import numpy as np
 from numpy.testing import assert_allclose
 from ase.build import nanotube
-from evgraf.utils import permute_axes
+from evgraf.utils import permute_axes, rotation_matrix
 from evgraf.chains.chain_registration2d import register_clever, calculate_nrmsdsq
 
 
 TOL = 1E-10
-
-
-def rotation_matrix(theta):
-    s = np.sin(theta)
-    c = np.cos(theta)
-    U = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-    assert_allclose(np.linalg.det(U), 1, atol=TOL)
-    return U
 
 
 @pytest.mark.parametrize("seed", range(4))
