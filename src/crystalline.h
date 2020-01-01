@@ -31,16 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef CRYSTALLINE_H
 #define CRYSTALLINE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int crystalline_bipartite_matching(int num_atoms, int num_cells,
-                                   double* P, double* Q, double* nbr_cells, int* numbers,
-                                   double* cost, int* permutation);
-
-#ifdef __cplusplus
-}
-#endif
-
+					double (*P)[3], double (*Q)[3],
+					double (*nbr_cells)[3], int* numbers,
+					double* cost, int* permutation);
 #endif

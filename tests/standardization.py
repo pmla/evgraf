@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_allclose
-from evgraf.standardization import standardize
+from evgraf.utils import standardize
 from ase.build import bulk
 
 
@@ -34,6 +34,7 @@ def test_standarization():
     inverse_permutation = np.argsort(std.zpermutation)
     reverted = std.atoms[inverse_permutation]
     reverted.set_cell(std.invop @ reverted.cell, scale_atoms=False)
+    reverted.set_cell(reverted.cell, scale_atoms=True)
     reverted.set_positions(reverted.get_positions() + std.barycenter)
     reverted.wrap(eps=0)
     p1 = reverted.get_positions()

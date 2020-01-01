@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from ase.build import bulk, mx2, nanotube
 from ase.geometry import find_mic
-from evgraf.permute_axes import permute_axes
+from evgraf.utils import permute_axes
 from evgraf import find_inversion_symmetry
 
 
@@ -11,11 +11,15 @@ TOL = 1E-10
 
 
 def check_result(atoms, result):
+    # check that permutation maps species onto like species
     assert (atoms.numbers == atoms.numbers[result.permutation]).all()
+
+    # check rmsd
     delta = result.atoms.get_positions() - atoms.get_positions()
     _, x = find_mic(delta, cell=atoms.cell)
     assert_allclose(np.sqrt(np.mean(x**2)), result.rmsd, atol=TOL)
 
+    # check inversion manually
     inverted = atoms[result.permutation]
     inverted.positions = -inverted.positions + 2 * result.axis
     inverted.wrap(eps=0)

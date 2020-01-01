@@ -1,78 +1,64 @@
 import numpy as np
 from collections import namedtuple
-from scipy.spatial.distance import cdist
 from ase import Atoms
+from ase.geometry import find_mic
 from ase.geometry.dimensionality.disjoint_set import DisjointSet
 from .crystal_reducer import CrystalReducer
 
 
-def assign_atoms_to_clusters(num_atoms, numbers, permutations):
+Reduced = namedtuple('ReducedCrystal', 'rmsd factor atoms components map')
+
+
+def assign_atoms_to_clusters(num_atoms, permutations):
     uf = DisjointSet(num_atoms)
     for p in permutations:
         for i, e in enumerate(p):
             uf.merge(i, e)
-
-    components = uf.get_components()
-    assert (numbers == numbers[components]).all()
     return uf.get_components(relabel=True)
 
 
-def collect_atoms(n, H, atoms):
-    """Collects atoms which belong in the same cluster. H describes the
-    subgroup basis."""
-    dim = sum(atoms.pbc)
+def reduction_basis(n, H, pbc):
+    dim = sum(pbc)
     # Extend the subgroup basis to 3D (if not already)
     R = np.diag([n, n, n])
-    indices = np.where(atoms.pbc)[0]
+    indices = np.where(pbc)[0]
     for i in range(dim):
         for j in range(dim):
             R[indices[i], indices[j]] = H[i, j]
-
-    # Perform an appropriate contraction of the unit cell and wrap the atoms
-    atoms.set_cell(R @ atoms.cell / n, scale_atoms=False)
-    atoms.wrap(eps=0)
-    return atoms
+    return R / n
 
 
-def cluster_component(ps, permutations, shifts, i):
-    ds = cdist(ps[i] - shifts, ps[permutations[:, i]])
-    indices = np.argmin(ds, axis=0)
-    positions = ps[permutations[:, i]] + shifts[indices]
+def reduced_layout(reducer, rmsd, group_index, R, permutations, atoms):
 
-    meanpos = np.mean(positions, axis=0)
-    component_rmsd = np.sum((positions - meanpos)**2)
-    return meanpos, component_rmsd
-
-
-def reduced_layout(reducer, rmsd, group_index, H, permutations):
-
-    num_atoms = len(reducer.atoms)
-    numbers = reducer.atoms.numbers
-    components = assign_atoms_to_clusters(num_atoms, numbers, permutations)
+    num_atoms = len(reducer.comparator.atoms)
+    components = assign_atoms_to_clusters(num_atoms, permutations)
     if num_atoms // group_index != len(np.bincount(components)):
         return None
 
     if len(np.unique(np.bincount(components))) > 1:
         return None
 
-    collected = collect_atoms(reducer.n, H, reducer.atoms.copy())
-    shifts = reducer.nbr_cells @ collected.cell
+    # Collect atoms in contracted unit cell
+    indices = np.argsort(components)
+    collected = reducer.comparator.atoms[indices]
+    collected.set_cell(R @ atoms.cell, scale_atoms=False)
+    collected.wrap(eps=0)
 
-    data = []
-    for c in np.unique(components):
-        i = list(components).index(c)
-        meanpos, crmsd = cluster_component(collected.get_positions(),
-                                           permutations, shifts, i)
-        data.append((meanpos, numbers[i], crmsd))
-    positions, numbers, crmsd = zip(*data)
+    clusters = components[indices]
+    ps = collected.get_positions()
+    parents = clusters * group_index
+    vmin, _ = find_mic(ps - ps[parents], collected.cell, pbc=collected.pbc)
+    positions = ps[parents] + vmin
 
-    rmsd_check = np.sqrt(sum(crmsd) / num_atoms)
+    m = num_atoms // group_index
+    meanpos = np.mean(positions.reshape((m, group_index, 3)), axis=1)
+    numbers = collected.numbers.reshape((m, group_index))[:, 0]
+    rmsd_check = np.sqrt(np.mean((positions - meanpos[clusters])**2))
     if abs(rmsd - rmsd_check) > 1E-12:
         return None
 
-    reduced = Atoms(positions=positions, numbers=numbers,
+    reduced = Atoms(positions=meanpos, numbers=numbers,
                     cell=collected.cell, pbc=collected.pbc)
-    reduced.set_cell(reducer.invop @ reduced.cell, scale_atoms=False)
     reduced.wrap(eps=0)
     return reduced, components
 
@@ -115,20 +101,25 @@ def find_crystal_reductions(atoms):
         components: integer ndarray
             Describes how atoms in the input structure are combined in the
             reduced structure
+        map: ndarray
+            Map from input cell to reduced cell
     """
     reducer = CrystalReducer(atoms)
     reductions = reducer.find_consistent_reductions()
-    Reduced = namedtuple('ReducedCrystal', 'rmsd factor atoms components')
-    invzperm = np.argsort(reducer.zpermutation)
+    invzperm = np.argsort(reducer.comparator.zpermutation)
 
     reduced = {}
     for rmsd, group_index, H, permutations in reductions:
-        result = reduced_layout(reducer, rmsd, group_index, H, permutations)
+        R = reduction_basis(reducer.n, H, atoms.pbc)
+        R = reducer.comparator.invop @ R @ reducer.comparator.op
+        result = reduced_layout(reducer, rmsd, group_index, R, permutations,
+                                atoms)
         if result is not None:
             reduced_atoms, components = result
             key = group_index
             entry = Reduced(rmsd=rmsd, factor=group_index, atoms=reduced_atoms,
-                            components=components[invzperm])
+                            components=components[invzperm],
+                            map=R)
             if key not in reduced:
                 reduced[key] = entry
             else:
