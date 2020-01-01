@@ -5,12 +5,9 @@
 #include <cassert>
 #include <vector>
 #include "crystalline.h"
+#include "wrap_positions.h"
 #include "rectangular_lsap.h"
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 static PyObject* error(PyObject* type, const char* msg)
 {
@@ -76,18 +73,21 @@ static PyObject* calculate_rmsd(PyObject* self, PyObject* args, PyObject* kwargs
 		return error(PyExc_TypeError, "numbers array must contain N entries");
 
 	int num_atoms = PyArray_DIM(obj_pcont, 0);
-	int num_cells = PyArray_DIM(obj_nbrcellcont, 0);
 	double* P = (double*)PyArray_DATA((PyArrayObject*)obj_p);
 	double* Q = (double*)PyArray_DATA((PyArrayObject*)obj_q);
-	double* nbrcells = (double*)PyArray_DATA((PyArrayObject*)obj_nbrcell);
+	int num_cells = PyArray_DIM(obj_nbrcellcont, 0);
+	double* nbrcells = (double*)PyArray_DATA((PyArrayObject*)obj_nbrcellcont);
 	int* numbers = (int*)PyArray_DATA((PyArrayObject*)obj_numbers);
 
+	
 	npy_intp dim[1] = {num_atoms};
 	PyObject* obj_permutation = PyArray_SimpleNew(1, dim, NPY_INT);
 	int* permutation = (int*)PyArray_DATA((PyArrayObject*)obj_permutation);
 
 	double cost = INFINITY;
-	int res = crystalline_bipartite_matching(num_atoms, num_cells, P, Q, nbrcells, numbers, &cost, permutation);
+	int res = crystalline_bipartite_matching(num_atoms, num_cells, (double (*)[3])P, (double (*)[3])Q,
+							(double (*)[3])nbrcells,
+							numbers, &cost, permutation);
 	if (res != 0)
 		return error(PyExc_RuntimeError, "bipartite matching failed");
 
@@ -143,6 +143,71 @@ static PyObject* linear_sum_assignment(PyObject* self, PyObject* args, PyObject*
 	return result;
 }
 
+static PyObject* wrap_positions(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+	(void)self;
+	PyObject* obj_pos = NULL;
+	PyObject* obj_cell = NULL;
+	PyObject* obj_pbc = NULL;
+	if (!PyArg_ParseTuple(args, "OOO", &obj_pos, &obj_cell, &obj_pbc))
+		return NULL;
+
+	PyObject* obj_poscont = NULL;
+	PyObject* obj_cellcont = NULL;
+	PyObject* obj_pbccont = NULL;
+
+	// get numpy arrays in contiguous form
+	obj_poscont = PyArray_ContiguousFromAny(obj_pos, NPY_DOUBLE, 1, 2);
+	if (obj_poscont == NULL)
+		return error(PyExc_TypeError, "Invalid input data: pos");
+
+	obj_cellcont = PyArray_ContiguousFromAny(obj_cell, NPY_DOUBLE, 1, 2);
+	if (obj_cellcont == NULL)
+		return error(PyExc_TypeError, "Invalid input data: cell");
+
+	obj_pbccont = PyArray_ContiguousFromAny(obj_pbc, NPY_BOOL, 1, 1);
+	if (obj_pbccont == NULL)
+		return error(PyExc_TypeError, "Invalid input data: pbc");
+
+	// validate numpy arrays
+	if (PyArray_NDIM(obj_poscont) != 2)
+		return error(PyExc_TypeError, "pos must have shape N x 3");
+
+	if (PyArray_DIM(obj_poscont, 1) != 3)
+		return error(PyExc_TypeError, "pos must contain three-dimensional coordinates");
+
+	if (PyArray_NDIM(obj_cellcont) != 2
+		|| PyArray_DIM(obj_cellcont, 0) != 3
+		|| PyArray_DIM(obj_cellcont, 1) != 3)
+		return error(PyExc_TypeError, "cell must have shape 3 x 3");
+
+	if (PyArray_NDIM(obj_pbccont) != 1)
+		return error(PyExc_TypeError, "pbc array must be 1-dimensional");
+
+	if (PyArray_DIM(obj_pbccont, 0) != 3)
+		return error(PyExc_TypeError, "pbc array must contain 3 entries");
+
+	int num_atoms = PyArray_DIM(obj_poscont, 0);
+	double* pos = (double*)PyArray_DATA((PyArrayObject*)obj_poscont);
+	double* cell = (double*)PyArray_DATA((PyArrayObject*)obj_cellcont);
+	int8_t* pbc = (int8_t*)PyArray_DATA((PyArrayObject*)obj_pbccont);
+
+	npy_intp dim[2] = {num_atoms, 3};
+	PyObject* obj_wrapped = PyArray_SimpleNew(2, dim, NPY_DOUBLE);
+	double* wrapped = (double*)PyArray_DATA((PyArrayObject*)obj_wrapped);
+
+	int res = _wrap_positions(num_atoms, (double (*)[3])pos, (double (*)[3])cell, pbc, (double (*)[3])wrapped);
+
+	Py_DECREF(obj_poscont);
+	Py_DECREF(obj_cellcont);
+	Py_DECREF(obj_pbccont);
+	return obj_wrapped;
+}
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static PyMethodDef evgrafcpp_methods[] = {
 	{
 		"calculate_rmsd",
@@ -155,6 +220,12 @@ static PyMethodDef evgrafcpp_methods[] = {
 		(PyCFunction)linear_sum_assignment,
 		METH_VARARGS,
 		"Solve the linear sum assignment problem."
+	},
+	{
+		"wrap_positions",
+		(PyCFunction)wrap_positions,
+		METH_VARARGS,
+		"Wrap atomic positions."
 	},
 	{NULL}
 };

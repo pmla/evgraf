@@ -328,5 +328,5 @@ def test_implemented(name, seed):
 #    get_distances(atoms)
 
 if __name__ == "__main__":
-    test_implemented('p4g', 0)
+    test_implemented('pg', 0)
     #test_distances()

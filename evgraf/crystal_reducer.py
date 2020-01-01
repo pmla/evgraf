@@ -26,8 +26,9 @@ class CrystalReducer:
         if key in self.permutations:
             return self.distances[key], self.permutations[key]
 
-        c = self.comparator.expand_coordinates(c)
-        positions = self.comparator.positions + c @ self.comparator.atoms.cell / self.n
+        comparator = self.comparator
+        c = comparator.expand_coordinates(c)
+        positions = comparator.positions + c @ comparator.atoms.cell / self.n
         rmsd, permutation = self.comparator.calculate_rmsd(positions)
 
         self.distances[key] = rmsd

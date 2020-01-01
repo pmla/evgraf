@@ -17,11 +17,11 @@ class CrystalInverter:
         The translation is specified by `c` which describes the coordinates of
         the subgroup element."""
         c = self.comparator.expand_coordinates(c)
-        positions = -self.comparator.positions + c @ self.comparator.atoms.cell / self.n
+        shift = c / self.n @ self.comparator.atoms.cell
+        positions = -self.comparator.positions + shift
         return self.comparator.calculate_rmsd(positions)
 
 
-# TODO: investigate whether inversion symmetry axis should lie at half-integer lattice sites
 def find_inversion_axis(inverter):
     n = inverter.n
     r = list(range(n))
@@ -79,13 +79,16 @@ def find_inversion_symmetry(atoms):
     inverter = CrystalInverter(atoms)
     rmsd, permutation, c = find_inversion_axis(inverter)
 
-    axis = (c / n) @ inverter.comparator.atoms.cell / 2 + inverter.comparator.barycenter
-    perm = inverter.comparator.zpermutation[permutation][np.argsort(inverter.comparator.zpermutation)]
-    inverted = atoms[perm]
+    comparator = inverter.comparator
+    permutation = permutation[np.argsort(comparator.zpermutation)]
+    permutation = comparator.zpermutation[permutation]
+
+    axis = (c / n) @ comparator.atoms.cell / 2 + comparator.barycenter
+    inverted = atoms[permutation]
     inverted.positions = -inverted.positions + 2 * axis
     inverted.wrap(eps=0)
     assert (inverted.numbers == atoms.numbers).all()
 
     symmetrized = symmetrized_layout(rmsd / 2, atoms, inverted)
     return Inversion(rmsd=rmsd / 2, axis=axis, atoms=symmetrized,
-                     permutation=perm)
+                     permutation=permutation)

@@ -2,8 +2,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <vector>
-#include "rectangular_lsap.h"
 #include <cstdio>
+#include "rectangular_lsap.h"
 
 
 static double calculate_dsquared(double (*a)[3], double (*b)[3], int num_cells, double (*nbr_cells)[3]) {
@@ -51,12 +51,13 @@ static int monoatomic_bipartite_matching(int num_atoms, int num_cells,
 	return res;
 }
 
-static int _crystalline_bipartite_matching(int num_atoms, int num_cells,
-						double (*P)[3], double (*Q)[3], double (*nbr_cells)[3],
-						int* numbers, double* p_cost, int* permutation)
+int crystalline_bipartite_matching(int num_atoms, int num_cells,
+					double (*P)[3], double (*Q)[3], double (*nbr_cells)[3],
+					int* numbers, double* p_cost, int* permutation)
 {
 	std::vector< int64_t > _permutation(num_atoms, 0);
 	std::vector< double > distances(num_atoms * num_atoms, INFINITY);
+
 
 	std::map< int, int > start;
 	std::map< int, int > count;
@@ -99,19 +100,3 @@ static int _crystalline_bipartite_matching(int num_atoms, int num_cells,
 	return res;
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int crystalline_bipartite_matching(int num_atoms, int num_cells,
-					double* P, double* Q, double* nbr_cells, int* numbers,
-					double* cost, int* permutation)
-{
-	return _crystalline_bipartite_matching(num_atoms, num_cells,
-						(double (*)[3])P, (double (*)[3])Q, (double (*)[3])nbr_cells,
-						numbers, cost, permutation);
-}
-
-#ifdef __cplusplus
-}
-#endif

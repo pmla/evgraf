@@ -113,8 +113,8 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
     return sink;
 }
 
-static int
-solve(int nr, int nc, double* input_cost, int64_t* output_col4row)
+int
+solve_rectangular_linear_sum_assignment(int nr, int nc, double* input_cost, int64_t* output_col4row)
 {
 
     // build a non-negative cost matrix
@@ -177,17 +177,3 @@ solve(int nr, int nc, double* input_cost, int64_t* output_col4row)
     return 0;
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int
-solve_rectangular_linear_sum_assignment(int nr, int nc, double* input_cost,
-                                        int64_t* col4row)
-{
-    return solve(nr, nc, input_cost, col4row);
-}
-
-#ifdef __cplusplus
-}
-#endif
