@@ -7,11 +7,17 @@ evgrafcpp_module = Extension(
     'evgrafcpp',
     sources=['src/evgrafcpp_module.cpp',
              'src/rectangular_lsap.cpp',
+             'src/rectangular_lsap.h',
              'src/crystalline.cpp',
+             'src/crystalline.h',
              'src/wrap_positions.cpp',
+             'src/wrap_positions.h',
              'src/lup_decomposition.cpp',
-             'src/matrix_vector.cpp'],
-    include_dirs=[os.path.join(numpy.get_include(), 'numpy')],
+             'src/lup_decomposition.h',
+             'src/matrix_vector.cpp',
+             'src/matrix_vector.h'],
+    include_dirs=[os.path.join(numpy.get_include(), 'numpy'),
+                  'src'],
     language='c++'
 )
 
