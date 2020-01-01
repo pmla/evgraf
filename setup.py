@@ -17,7 +17,7 @@ evgrafcpp_module = Extension(
 
 major_version = 0
 minor_version = 1
-subminor_version = 2
+subminor_version = 3
 version = '%d.%d.%d' % (major_version, minor_version, subminor_version)
 
 setup(name='evgraf',
