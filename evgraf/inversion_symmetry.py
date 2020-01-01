@@ -6,6 +6,10 @@ from ase.geometry import find_mic
 from .crystal_comparator import CrystalComparator
 
 
+InversionSymmetry = namedtuple('InversionSymmetry',
+                               'rmsd axis atoms permutation')
+
+
 class CrystalInverter:
 
     def __init__(self, atoms):
@@ -73,8 +77,6 @@ def find_inversion_symmetry(atoms):
         permutation: integer ndarray
             Describes how atoms are paired to create the symmetrized structure
     """
-    Inversion = namedtuple('InversionSymmetry', 'rmsd axis atoms permutation')
-
     n = len(atoms)
     inverter = CrystalInverter(atoms)
     rmsd, permutation, c = find_inversion_axis(inverter)
@@ -90,5 +92,5 @@ def find_inversion_symmetry(atoms):
     assert (inverted.numbers == atoms.numbers).all()
 
     symmetrized = symmetrized_layout(rmsd / 2, atoms, inverted)
-    return Inversion(rmsd=rmsd / 2, axis=axis, atoms=symmetrized,
-                     permutation=permutation)
+    return InversionSymmetry(rmsd=rmsd / 2, axis=axis, atoms=symmetrized,
+                             permutation=permutation)

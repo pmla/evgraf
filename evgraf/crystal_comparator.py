@@ -13,7 +13,6 @@ class CrystalComparator:
         self.invop = std.invop
         self.zpermutation = std.zpermutation
         self.dim = sum(self.atoms.pbc)
-        # self.positions = self._wrapped_positions(self.atoms.get_positions())
         self.positions = wrap_positions(self.atoms.get_positions(),
                                         self.atoms.cell, self.atoms.pbc)
 
@@ -21,14 +20,6 @@ class CrystalComparator:
         self.offsets = self.nbr_cells @ self.atoms.cell
         if subtract_barycenter:
             self.barycenter = std.barycenter
-
-    def _wrapped_positions(self, positions):
-        scaled_positions = self.atoms.cell.scaled_positions(positions)
-        for i in range(3):
-            if self.atoms.pbc[i]:
-                scaled_positions[:, i] %= 1.0
-                scaled_positions[:, i] %= 1.0
-        return self.atoms.cell.cartesian_positions(scaled_positions)
 
     def _get_neighboring_cells(self):
         pbc = self.atoms.pbc.astype(np.int)
@@ -50,7 +41,6 @@ class CrystalComparator:
         return np.array(expanded)
 
     def calculate_rmsd(self, positions):
-        # positions = self._wrap_positions(positions)
         positions = wrap_positions(positions, self.atoms.cell, self.atoms.pbc)
         return calculate_rmsd(positions, self.positions, self.offsets,
                               self.atoms.numbers.astype(np.int32))
