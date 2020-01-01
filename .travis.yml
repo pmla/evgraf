@@ -6,7 +6,7 @@ jobs:
         - "3.6"      # current default Python on Travis CI
       # command to install dependencies
       install:
-        - pip install git+https://github.com/pmla/evgraf@development
+        - pip install git+https://github.com/pmla/evgraf
       # command to run tests
       script:
         - pytest tests/*
