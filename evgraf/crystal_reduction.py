@@ -51,9 +51,10 @@ def reduced_layout(reducer, rmsd, group_index, R, permutations, atoms):
     positions = ps[parents] + vmin
 
     m = num_atoms // group_index
-    meanpos = np.mean(positions.reshape((m, group_index, 3)), axis=1)
     numbers = collected.numbers.reshape((m, group_index))[:, 0]
-    rmsd_check = np.sqrt(np.mean((positions - meanpos[clusters])**2))
+    meanpos = np.mean(positions.reshape((m, group_index, 3)), axis=1)
+    deltas = positions - meanpos[clusters]
+    rmsd_check = np.sqrt(np.sum(deltas**2) / num_atoms)
     if abs(rmsd - rmsd_check) > 1E-12:
         return None
 

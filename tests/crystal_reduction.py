@@ -4,10 +4,11 @@ import numpy as np
 from numpy.testing import assert_allclose
 from ase import Atoms
 from ase.geometry import find_mic
-from ase.build import bulk, mx2, nanotube, make_supercell
+from ase.build import bulk, mx2, nanotube, make_supercell, graphene
 from evgraf.utils import permute_axes
-from evgraf import find_crystal_reductions
 from evgraf.crystal_comparator import CrystalComparator
+from evgraf import find_crystal_reductions
+#from ase.geometry.rmsd import find_crystal_reductions
 
 
 TOL = 1E-10
@@ -122,6 +123,17 @@ def test_mos2(seed, i):
     factors = [reduced.factor for reduced in result]
     assert tuple(factors) == (1, 2, 4, 8, 16)
     check_components(atoms, result)
+
+
+def test_graphene():
+    size = (2, 2, 1)
+    atoms = graphene(size=size)
+    atoms.positions += (-0.1, 0.6, 0)
+    atoms.rattle(seed=0, stdev=0.1)
+    atoms.wrap()
+
+    result = find_crystal_reductions(atoms)
+    assert len(result) > 1
 
 
 # 1-dimensional: carbon nanotube
