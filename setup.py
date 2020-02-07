@@ -32,6 +32,6 @@ setup(name='evgraf',
       url='https://github.com/pmla/evgraf',
       ext_modules=[evgrafcpp_module],
       install_requires=['numpy',
-                        'ase>=3.18.1'],
+                        'ase>=3.19'],
       packages=find_packages()
       )
