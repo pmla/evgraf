@@ -8,13 +8,12 @@ from ase.build import bulk, mx2, nanotube, make_supercell, graphene
 from evgraf.utils import permute_axes
 from evgraf.crystal_comparator import CrystalComparator
 from evgraf import find_crystal_reductions
-#from ase.geometry.rmsd import find_crystal_reductions
 
 
 TOL = 1E-10
 
 
-def check_components(atoms, result):
+def check_components(atoms, result, tol=TOL):
     for reduced in result:
         assert (atoms.pbc == reduced.atoms.pbc).all()
         assert (np.bincount(reduced.components) == reduced.factor).all()
@@ -28,7 +27,7 @@ def check_components(atoms, result):
         # check supercell is correct
         supercell = make_supercell(reduced.atoms, np.linalg.inv(reduced.map))
         assert (supercell.pbc == atoms.pbc).all()
-        assert_allclose(supercell.cell, atoms.cell, atol=TOL)
+        assert_allclose(supercell.cell, atoms.cell, atol=tol)
 
         # check rmsd is correct
         comparator = CrystalComparator(atoms)
@@ -36,7 +35,7 @@ def check_components(atoms, result):
         supercell = supercell[indices]
         supercell.wrap(eps=0)
         rmsd, permutation = comparator.calculate_rmsd(supercell.get_positions())
-        assert_allclose(rmsd, reduced.rmsd, atol=TOL)
+        assert_allclose(rmsd, reduced.rmsd, atol=tol)
 
         # check components are correct
         indices = np.argsort(reduced.components)
@@ -53,7 +52,7 @@ def check_components(atoms, result):
         m = len(atoms) // reduced.factor
         meanpos = np.mean(positions.reshape((m, reduced.factor, 3)), axis=1)
         rmsd_check = np.sqrt(np.mean((positions - meanpos[components])**2))
-        assert_allclose(reduced.rmsd, rmsd_check, atol=TOL)
+        assert_allclose(reduced.rmsd, rmsd_check, atol=tol)
 
 
 def randomize(rng, atoms):
@@ -94,15 +93,16 @@ def test_nacl(seed):
 
 @pytest.mark.parametrize("seed", range(2))
 def test_nacl_rattled(seed):
+    stdev = 0.1
     size = 3
     atoms = bulk("NaCl", "rocksalt", a=5.64) * size
-    atoms.rattle()
+    atoms.rattle(seed=seed, stdev=stdev)
 
     rng = np.random.RandomState(seed=seed)
     atoms = randomize(rng, atoms)
 
     result = find_crystal_reductions(atoms)
-    check_components(atoms, result)
+    check_components(atoms, result, tol=3 * stdev)
 
 
 # 2-dimensional: MoS2
