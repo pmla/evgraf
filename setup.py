@@ -5,12 +5,12 @@ from setuptools import Extension, find_packages, setup
 
 evgrafcpp_module = Extension(
     'evgrafcpp',
-    ['src/evgrafcpp_module.cpp',
-     'src/rectangular_lsap.cpp',
-     'src/crystalline.cpp',
-     'src/wrap_positions.cpp',
+    ['src/crystalline.cpp',
+     'src/evgrafcpp_module.cpp',
      'src/lup_decomposition.cpp',
      'src/matrix_vector.cpp',
+     'src/rectangular_lsap.cpp',
+     'src/wrap_positions.cpp',
     ],
     include_dirs=[os.path.join(numpy.get_include(), 'numpy'),
                   'src',
@@ -20,7 +20,7 @@ evgrafcpp_module = Extension(
 
 major_version = 0
 minor_version = 1
-subminor_version = 5
+subminor_version = 6
 version = '%d.%d.%d' % (major_version, minor_version, subminor_version)
 
 setup(name='evgraf',
