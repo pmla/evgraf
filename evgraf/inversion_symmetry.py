@@ -27,12 +27,14 @@ class CrystalInverter:
         return self.comparator.calculate_rmsd(positions)
 
 
-def calculate_polar_vector(atoms, axis):
+def calculate_polar_vector(atoms, permutation, axis):
     # find best axis by minimization of moment of inertia
     positions = atoms.get_positions()
-    inverted_positions = -positions + 2 * axis
+    inverted_positions = -positions[permutation] + 2 * axis
     deltas = positions - inverted_positions
     vmin, _ = find_mic(deltas, atoms.cell, pbc=atoms.pbc)
+    print()
+    print(vmin)
 
     l, v = np.linalg.eigh(np.eye(3) - vmin.T @ vmin)
     return v.T[0]
@@ -57,15 +59,15 @@ def find_inversion_axis(inverter):
         rmsd, permutation = inverter.get_point(c)
         c = inverter.comparator.expand_coordinates(c)
         best = min(best, (rmsd, permutation, c), key=lambda x: x[0])
-        data.append((rmsd, c))
+        data.append((rmsd, permutation, c))
     data.sort(key=lambda x:x[0])
     rmsd, permutation, c = best
 
     delta = 0
     best_vector = None
-    for next_rmsd, next_c in data:
+    for next_rmsd, next_permutation, next_c in data:
         axis = (next_c / n) @ inverter.comparator.atoms.cell / 2
-        vector = calculate_polar_vector(inverter.comparator.atoms, axis)
+        vector = calculate_polar_vector(inverter.comparator.atoms, next_permutation, axis)
         if best_vector is None:
             best_vector = vector
         else:
@@ -130,7 +132,7 @@ def find_inversion_symmetry(atoms):
     inverted.wrap(eps=0)
     assert (inverted.numbers == atoms.numbers).all()
 
-    vector = calculate_polar_vector(atoms, axis)
+    vector = calculate_polar_vector(atoms, permutation, axis)
 
     symmetrized = symmetrized_layout(rmsd / 2, atoms, inverted)
     return InversionSymmetry(rmsd=rmsd / 2, axis=axis, atoms=symmetrized,
