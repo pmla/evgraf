@@ -28,12 +28,12 @@ We can quantify the breaking of inversion symmetry in BaTiO3.
 First we create the crystal structure:
 ```
 >>> from ase import Atoms
->>> atoms = Atoms(symbols='BaTiO3', pbc=True, cell=np.diag([4.002, 4.002, 4.216]),
-...               positions=np.array([[0.000, 0.000, 0.085],
-...                                   [2.001, 2.001, 2.272],
-...                                   [2.001, 2.001, 4.092],
-...                                   [0.000, 2.001, 2.074],
-...                                   [2.001, 0.000, 2.074]]))
+>>> atoms = Atoms(symbols='BaTiO3', pbc=True, cell=[4.002, 4.002, 4.216],
+...               positions=[[0.000, 0.000, 0.085],
+...                          [2.001, 2.001, 2.272],
+...                          [2.001, 2.001, 4.092],
+...                          [0.000, 2.001, 2.074],
+...                          [2.001, 0.000, 2.074]])
 ```
 We call the inversion symmetry analysis function:
 ```
