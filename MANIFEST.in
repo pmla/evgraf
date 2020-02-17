@@ -1,0 +1,5 @@
+include LICENSE
+include README.md
+include setup.py
+recursive-include evgraf *.py
+recursive-include src *.cpp .*h
