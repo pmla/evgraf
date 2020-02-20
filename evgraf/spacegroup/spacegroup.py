@@ -1,7 +1,6 @@
 import itertools
 import numpy as np
 from evgraf import find_crystal_reductions
-from evgraf.utils import standardize, rotation_matrix
 from evgraf.crystal_comparator import CrystalComparator
 from .lattice_symmetrization import symmetrize_bravais
 from ase.spacegroup import get_bravais_class
@@ -16,7 +15,7 @@ class SpaceGroup:
             self.num = 3
             self.denom = 3
         else:
-            self.num = 1
+            self.num = 2
             self.denom = 2
 
 
@@ -37,6 +36,21 @@ for i in range(1, 231):
     groups[i] = SpaceGroup(lattice, [symmetries])
 
 
+def measure(comparator, positions, cell, symmetries, n, denom, acc, best, c):
+    offset = comparator.expand_coordinates(c)
+    shift = offset / (denom * n) @ cell
+
+    for rotation, translation in symmetries:
+        positions = (positions - shift) @ rotation.T + translation @ cell + shift
+        rmsd, perm = comparator.calculate_rmsd(positions)
+        nrmsdsq = n * rmsd**2
+        acc += nrmsdsq
+        if acc >= best:
+            break
+
+    return acc
+
+
 def _get_spacegroup_distance(name, atoms, best=float("inf")):
     if name == 'p1':
         return 0
@@ -44,7 +58,6 @@ def _get_spacegroup_distance(name, atoms, best=float("inf")):
         raise ValueError("Not a valid space group.")
 
     n = len(atoms)
-    std = standardize(atoms)
     group = groups[name]
     num = group.num
     denom = group.denom
@@ -54,28 +67,17 @@ def _get_spacegroup_distance(name, atoms, best=float("inf")):
         return dsym
 
     comparator = CrystalComparator(sym_atoms, subtract_barycenter=True)
-    pos = comparator.positions.copy()
+    positions = comparator.positions.copy()
     cell = comparator.invop @ comparator.atoms.cell
 
     for symmetries in group.symmetries:
-        for i, j, k in itertools.product(range(num * n), range(num * n), range(num * n)):
-            offset = comparator.expand_coordinates((i, j, k))
-            shift = offset / (denom * n) @ cell
-            positions0 = pos - shift
-
-            acc = dsym
-            for rotation, translation in symmetries:
-                positions = positions0 @ rotation.T + translation @ cell + shift
-                rmsd, perm = comparator.calculate_rmsd(positions)
-                nrmsdsq = n * rmsd**2
-                acc += nrmsdsq
-                if acc >= best:
-                    break
+        for c in itertools.product(range(num * n), repeat=3):
+            acc = measure(comparator, positions, cell, symmetries, n, denom, dsym, best, c)
             best = min(best, acc)
     return best
 
 
-def get_spacegroup_distance(name, atoms):
+def get_spacegroup_distance(atoms, name):
     results = []
     reductions = find_crystal_reductions(atoms)
     assert len(reductions)
