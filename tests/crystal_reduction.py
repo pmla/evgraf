@@ -3,9 +3,8 @@ import itertools
 import numpy as np
 from numpy.testing import assert_allclose
 from ase import Atoms
-from ase.geometry import find_mic
+from ase.geometry import find_mic, permute_axes
 from ase.build import bulk, mx2, nanotube, make_supercell, graphene
-from evgraf.utils import permute_axes
 from evgraf.crystal_comparator import CrystalComparator
 from evgraf import find_crystal_reductions
 

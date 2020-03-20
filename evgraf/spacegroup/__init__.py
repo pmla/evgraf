@@ -1,3 +1,3 @@
-from .spacegroup import get_spacegroup_distance
+from .spacegroup import find_spacegroup_symmetry
 
-__all__ = ['get_spacegroup_distance']
+__all__ = ['find_spacegroup_symmetry']

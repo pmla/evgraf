@@ -40,7 +40,11 @@ class CrystalComparator:
                 expanded.append(0)
         return np.array(expanded)
 
-    def calculate_rmsd(self, positions):
+    def calculate_rmsd(self, positions, translation=None):
         positions = wrap_positions(positions, self.atoms.cell, self.atoms.pbc)
-        return calculate_rmsd(positions, self.positions, self.offsets,
+        if translation is None:
+            P = self.positions
+        else:
+            P = wrap_positions(self.positions - translation, self.atoms.cell, self.atoms.pbc)
+        return calculate_rmsd(positions, P, self.offsets,
                               self.atoms.numbers.astype(np.int32))

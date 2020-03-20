@@ -2,7 +2,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from ase.build import bulk, mx2, nanotube
-from evgraf.utils import permute_axes, standardize
+from ase.geometry import permute_axes
+from evgraf.utils import standardize
 from evgrafcpp import wrap_positions
 
 
