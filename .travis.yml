@@ -2,12 +2,43 @@ jobs:
   include:
     - language: python
       python:
-        - "3.5"
         - "3.6"      # current default Python on Travis CI
       # command to install dependencies
       install:
-        - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
-        - pip install git+https://github.com/pmla/evgraf@$BRANCH
+        - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
+        - python3 -m pip install git+https://github.com/pmla/evgraf@$BRANCH
+        - python3 -m pip install scipy
       # command to run tests
       script:
-        - pytest tests/*
+        - python3 -m pytest tests/*
+
+    - language: sh
+      os: osx
+      env:
+        - TOXENV=py3
+        - HOMEBREW_NO_INSTALL_CLEANUP=1
+        - HOMEBREW_NO_ANALYTICS=1
+      before_cache:
+        # - brew cleanup
+        - rm -f "$HOME/Library/Caches/pip/log/debug.log"
+      cache:
+        directories:
+          # - "$HOME/Library/Caches/Homebrew"
+          - "$HOME/Library/Caches/pip"
+      addons:
+        homebrew:
+          # update: true
+          packages: python3
+      before_install:
+        - python3 -m pip install scipy
+        - python3 -m pip install --upgrade virtualenv
+        - virtualenv -p python3 --system-site-packages "$HOME/venv"
+        - source "$HOME/venv/bin/activate"
+        - python3 -m pip install --upgrade pytest
+      # command to install dependencies
+      install:
+        - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
+        - python3 -m pip install git+https://github.com/pmla/evgraf@$BRANCH
+      # command to run tests
+      script:
+        - python3 -m pytest tests/*
