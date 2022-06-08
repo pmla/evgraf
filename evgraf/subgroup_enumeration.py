@@ -31,7 +31,7 @@ def get_subgroup_elements(orders, H):
             size *= x // e
 
     dimension = len(orders)
-    indices = np.zeros((size, dimension)).astype(np.int)
+    indices = np.zeros((size, dimension), dtype=int)
     indices[:, 0] = H[0, 0] * np.arange(size)
 
     for i, order in enumerate(orders):
@@ -46,7 +46,7 @@ def get_subgroup_elements(orders, H):
 
 def consistent_first_rows(dimension, dm, ffilter):
     for a in dm:
-        H = np.zeros((dimension, dimension)).astype(np.int)
+        H = np.zeros((dimension, dimension), dtype=int)
         H[0, 0] = a
         if ffilter is None or ffilter(H):
             yield a
@@ -131,7 +131,7 @@ def enumerate_subgroup_bases(orders, ffilter=None,
                 for t in range(A):
                     s = a * t // A
 
-                    H = np.zeros((dimension, dimension)).astype(np.int)
+                    H = np.zeros((dimension, dimension), dtype=int)
                     H[0] = [a, 0, 0]
                     H[1] = [s, b, 0]
                     H[2, 2] = r

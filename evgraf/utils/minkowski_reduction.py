@@ -54,7 +54,7 @@ def closest_vector(t0, u, v):
 
 def reduction_full(B):
     """Calculate a Minkowski-reduced lattice basis (3D reduction)."""
-    H = np.eye(3).astype(np.int)
+    H = np.eye(3, dtype=int)
     norms = np.linalg.norm(B, axis=1)
 
     max_it = 100000    # in practice this is not exceeded
@@ -122,7 +122,7 @@ def minkowski_reduce(cell, pbc=True):
     pbc = pbc2pbc(pbc)
     dim = pbc.sum()
 
-    op = np.eye(3).astype(np.int)
+    op = np.eye(3, dtype=int)
     if dim == 2:
         perm = np.argsort(pbc, kind='merge')[::-1]    # stable sort
         pcell = cell[perm][:, perm]

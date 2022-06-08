@@ -22,7 +22,7 @@ class CrystalComparator:
             self.barycenter = std.barycenter
 
     def _get_neighboring_cells(self):
-        pbc = self.atoms.pbc.astype(np.int)
+        pbc = self.atoms.pbc.astype(int)
         return np.array(list(itertools.product(*[range(-p, p + 1)
                                                  for p in pbc])))
 
