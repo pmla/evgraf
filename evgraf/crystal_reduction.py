@@ -13,8 +13,8 @@ def assign_atoms_to_clusters(num_atoms, permutations):
     uf = DisjointSet(num_atoms)
     for p in permutations:
         for i, e in enumerate(p):
-            uf.merge(i, e)
-    return uf.get_components(relabel=True)
+            uf.union(i, e)
+    return uf.find_all(relabel=True)
 
 
 def reduction_basis(n, H, pbc):

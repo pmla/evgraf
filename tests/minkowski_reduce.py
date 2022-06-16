@@ -28,7 +28,7 @@ def test_random_3D(seed):
 
     # Test idempotency
     _, _H = minkowski_reduce(R)
-    assert (_H == np.eye(3).astype(np.int)).all()
+    assert (_H == np.eye(3, dtype=int)).all()
 
     rcell, _ = minkowski_reduce(B)
     assert np.allclose(rcell, R, atol=tol)
@@ -71,10 +71,10 @@ def test_single_vector():
 @pytest.mark.parametrize("i", range(3))
 def test_2D(i):
     pbc = np.roll([0, 1, 1], i)
-    rcell, op = minkowski_reduce(lcell.astype(np.float), pbc=pbc)
+    rcell, op = minkowski_reduce(lcell.astype(float), pbc=pbc)
     assert (rcell[i] == lcell[i]).all()
 
-    zcell = np.copy(lcell.astype(np.float))
+    zcell = np.copy(lcell.astype(float))
     zcell[i] = 0
     rzcell, _ = minkowski_reduce(zcell, zcell.any(1))
     rcell[i] = 0
